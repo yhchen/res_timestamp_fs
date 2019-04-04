@@ -1,0 +1,27 @@
+{
+  "name": "res_timestamp_fs",
+  "version": "1.0.0",
+  "description": "resource time stamp build tools and runtime library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yhchen/res_timestamp_fs.git"
+  },
+  "author": "myself559@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yhchen/res_timestamp_fs/issues"
+  },
+  "homepage": "https://github.com/yhchen/res_timestamp_fs#readme",
+  "devDependencies": {
+    "@types/micromatch": "^3.1.0",
+    "@types/node": "^11.13.0",
+    "typescript": "^3.4.1"
+  },
+  "dependencies": {
+    "micromatch": "^3.1.10"
+  }
+}
