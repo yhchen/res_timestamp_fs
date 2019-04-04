@@ -12,7 +12,7 @@ const path = __importStar(require("path"));
 const argv = __importStar(require("argv"));
 const work_js_1 = require("./src/work.js");
 const config_tpl = __importStar(require("./config_tpl.json"));
-let config = config_tpl;
+let gConfig = config_tpl;
 function printHelp() {
     console.error('Usage :');
     argv.help();
@@ -21,7 +21,7 @@ function printHelp() {
 const pkg = __importStar(require("./package.json"));
 argv.version(pkg.version);
 const ParamOutFilePath = 'out-file';
-const ConfigurePath = 'list-filters';
+const ParamConfigurePath = 'config-path';
 // gen args
 argv.option([
     {
@@ -32,7 +32,7 @@ argv.option([
         example: '${path_relative_to_cwd_or_absolute}/res.tstm',
     },
     {
-        name: ConfigurePath,
+        name: ParamConfigurePath,
         short: 'c',
         type: 'path',
         description: 'configure file path.',
@@ -49,8 +49,31 @@ function resolvePath(s) {
 function main() {
     const args = argv.run(process.argv);
     const outputfile = args.options[ParamOutFilePath];
+    if (outputfile == undefined) {
+        console.error(`argument '-o' not found. argument not complete.`);
+        printHelp();
+        return -1;
+    }
+    const config_file = args.options[ParamConfigurePath];
+    if (config_file) {
+        if (!fs.existsSync(config_file)) {
+            console.error(`argument '-c' config file not exist.`);
+            printHelp();
+            return -2;
+        }
+        const config_context = fs.readFileSync(config_file, { flag: 'r', encoding: 'utf8' });
+        try {
+            gConfig = JSON.parse(config_context);
+        }
+        catch (ex) {
+            console.error(`configure file format error.`);
+            console.error(ex);
+            printHelp();
+            return -3;
+        }
+    }
     try {
-        for (const filters of config.list) {
+        for (const filters of gConfig.list) {
             filters.path = resolvePath(filters.path);
             if (!fs.existsSync(filters.path)) {
                 throw `ERROR : path ${filters.path} not exists!`;
@@ -60,13 +83,14 @@ function main() {
                 throw `ERROR : relative path ${filters.relative} not exists!`;
             }
         }
-        return work_js_1.execute(config, outputfile);
+        return work_js_1.execute(gConfig, outputfile);
     }
     catch (ex) {
         console.error('ERROR : GOT EXCEPTION : ');
         console.error(ex);
         return -10001;
     }
+    return 0;
 }
 process.exit(main());
 //# sourceMappingURL=index.js.map

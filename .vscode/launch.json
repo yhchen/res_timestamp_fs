@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceFolder}\\index.js",
+            "program": "${workspaceFolder}/index.js",
             "cwd": "${workspaceFolder}",
             "args": [
                 "-o",
@@ -16,6 +16,15 @@
                 "-c",
                 "./config_tpl.json"
             ],
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Make Test Files",
+            "program": "${workspaceFolder}/src/testcase.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]

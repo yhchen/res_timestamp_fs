@@ -4,7 +4,7 @@ import * as argv from 'argv';
 import { execute } from './src/work.js';
 import * as config_tpl from './config_tpl.json';
 
-let config: typeof config_tpl = config_tpl;
+let gConfig: typeof config_tpl = config_tpl;
 
 function printHelp() {
     console.error('Usage :');
@@ -16,7 +16,7 @@ import * as pkg from './package.json';
 argv.version(pkg.version);
 
 const ParamOutFilePath = 'out-file';
-const ConfigurePath = 'list-filters';
+const ParamConfigurePath = 'config-path';
 
 // gen args
 argv.option([
@@ -28,7 +28,7 @@ argv.option([
         example:    '${path_relative_to_cwd_or_absolute}/res.tstm',
     },
     {
-        name:       ConfigurePath,
+        name:       ParamConfigurePath,
         short:      'c',
         type:       'path',
         description:'configure file path.',
@@ -45,8 +45,30 @@ function resolvePath(s: string): string {
 function main(): number {
     const args = argv.run(process.argv);
     const outputfile = args.options[ParamOutFilePath];
+    if (outputfile == undefined) {
+        console.error(`argument '-o' not found. argument not complete.`);
+        printHelp();
+        return -1;
+    }
+    const config_file = args.options[ParamConfigurePath];
+    if (config_file) {
+        if (!fs.existsSync(config_file)) {
+            console.error(`argument '-c' config file not exist.`);
+            printHelp();
+            return -2;
+        }
+        const config_context = fs.readFileSync(config_file, {flag:'r', encoding:'utf8'});
+        try {
+            gConfig = JSON.parse(config_context);
+        } catch (ex) {
+            console.error(`configure file format error.`);
+            console.error(ex);
+            printHelp();
+            return -3;
+        }
+    }
     try {
-        for (const filters of config.list) {
+        for (const filters of gConfig.list) {
             filters.path = resolvePath(filters.path);
             if (!fs.existsSync(filters.path)) {
                 throw `ERROR : path ${filters.path} not exists!`;
@@ -56,12 +78,13 @@ function main(): number {
                 throw `ERROR : relative path ${filters.relative} not exists!`;
             }
         }
-        return execute(config, outputfile);
+        return execute(gConfig, outputfile);
     } catch (ex) {
         console.error('ERROR : GOT EXCEPTION : ');
         console.error(ex);
         return -10001;
     }
+    return 0;
 }
 
 process.exit(main());

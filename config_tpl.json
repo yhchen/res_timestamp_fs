@@ -9,7 +9,7 @@
 	"list": [
 		{
 			"path": "./test/files",
-			"relative": "./",
+			"relative": "./test/files/",
 			"filters": [
 				"**/*"
 			]

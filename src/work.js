@@ -11,7 +11,6 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const crc32 = __importStar(require("buffer-crc32"));
 const match_utils = __importStar(require("./utils/match_utils"));
-const zlib_utils = __importStar(require("./utils/zlib_utils"));
 const fs_utils = __importStar(require("./utils/fs_utils"));
 // header version
 const HeaderVersion = 0x01190404;
@@ -31,7 +30,7 @@ class CStringTable {
         idx = this._stringTable.length;
         this._stringMap.set(s, idx);
         this._stringTable.push(s);
-        this._size += s.length + 2; // string length + 1 byte store string length + 1 byte string end character
+        this._size += s.length + 1; // string length + 1 byte store string length
         return idx;
     }
     get stringTable() { return this._stringTable; }
@@ -133,7 +132,6 @@ function makeBuffer(fmtData) {
     for (let s of fmtData.stringTable.stringTable) {
         offset = buffer.writeUInt8(s.length, offset); // write string length
         offset += buffer.write(s, offset); // write string
-        offset = buffer.writeUInt8(0, offset);
     }
     for (let fi of fmtData.files) {
         offset = buffer.writeUInt16BE(fi.path_idx, offset);
@@ -144,7 +142,7 @@ function makeBuffer(fmtData) {
     return buffer;
 }
 function makeCompression(config, buffer) {
-    const stream = zlib_utils.zipStream(buffer, config.compress);
+    // const stream = zlib_utils.zipStream(buffer, config.compress);
     return buffer;
 }
 //# sourceMappingURL=work.js.map
