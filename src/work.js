@@ -10,7 +10,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const crc32 = __importStar(require("buffer-crc32"));
+const comm_utils = __importStar(require("./utils/comm_utils"));
 const match_utils = __importStar(require("./utils/match_utils"));
+const zlib_utils = __importStar(require("./utils/zlib_utils"));
 const fs_utils = __importStar(require("./utils/fs_utils"));
 // header version
 const HeaderVersion = 0x01190404;
@@ -142,7 +144,10 @@ function makeBuffer(fmtData) {
     return buffer;
 }
 function makeCompression(config, buffer) {
-    // const stream = zlib_utils.zipStream(buffer, config.compress);
-    return buffer;
+    if (!config.compress || comm_utils.count(config.compress) == 0) {
+        return buffer;
+    }
+    const stream = zlib_utils.zipStream(buffer, config.compress);
+    return stream;
 }
 //# sourceMappingURL=work.js.map

@@ -1,10 +1,5 @@
 {
 	"compress": {
-		"type": "zlib",
-		"store": false,
-		"zlib": {
-			"level": 10
-		}
 	},
 	"list": [
 		{

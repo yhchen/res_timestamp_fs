@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crc32 from 'buffer-crc32';
 import * as config_tpl from '../config_tpl.json';
+import * as comm_utils from './utils/comm_utils';
 import * as match_utils from './utils/match_utils';
 import * as zlib_utils from './utils/zlib_utils';
 import * as fs_utils from './utils/fs_utils';
@@ -154,7 +155,12 @@ function makeBuffer(fmtData : CFMSFData) : Buffer {
 	return buffer;
 }
 
+
+
 function makeCompression(config: typeof config_tpl, buffer: Buffer) : Buffer | undefined {
-	// const stream = zlib_utils.zipStream(buffer, config.compress);
-	return buffer;
+	if (!config.compress || comm_utils.count(config.compress) == 0) {
+		return buffer;
+	}
+	const stream = zlib_utils.zipStream(buffer, config.compress);
+	return stream;
 }
