@@ -9,6 +9,8 @@ let gConfig: typeof config_tpl = config_tpl;
 function printHelp() {
     console.error('Usage :');
     argv.help();
+    console.error('config template : ');
+    console.error(JSON.stringify(config_tpl, undefined, 4));
 }
 
 // gen version
@@ -42,7 +44,7 @@ function resolvePath(s: string): string {
     return path.join(process.cwd(), s);
 }
 
-function main(): number {
+async function mainAsync(): Promise<number> {
     const args = argv.run(process.argv);
     const outputfile = args.options[ParamOutFilePath];
     if (outputfile == undefined) {
@@ -78,7 +80,7 @@ function main(): number {
                 throw `ERROR : relative path ${filters.relative} not exists!`;
             }
         }
-        return execute(gConfig, outputfile);
+        return await execute(gConfig, outputfile);
     } catch (ex) {
         console.error('ERROR : GOT EXCEPTION : ');
         console.error(ex);
@@ -87,4 +89,9 @@ function main(): number {
     return 0;
 }
 
-process.exit(main());
+async function main() {
+    process.exit(await mainAsync());
+}
+
+// call main
+main();

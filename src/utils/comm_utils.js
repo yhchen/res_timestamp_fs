@@ -1,18 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// get object member count
 function count(o) {
-    var t = typeof o;
+    let t = typeof o;
     if (t == 'string') {
         return o.length;
     }
     else if (t == 'object') {
-        var n = 0;
-        for (var i in o) {
+        let n = 0;
+        for (let _ in o) {
             n++;
         }
         return n;
     }
-    return false;
+    return 0;
 }
 exports.count = count;
 //# sourceMappingURL=comm_utils.js.map

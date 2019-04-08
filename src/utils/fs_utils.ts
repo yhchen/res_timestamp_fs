@@ -89,6 +89,26 @@ export function getFileExtName(filename: string, includeDot: boolean = true): st
 }
 
 /**
+ * get file name without extension
+ * example : 
+ *     /1.pvr.ccz => .pvr.ccz
+ *     /path/34kjdfdfjdf.txt.zip => 34kjdfdfjdf
+ *     /my_path/file_no_ext => file_no_ext
+ * @param filename file path
+ */ 
+export function getFileWithoutExtName(filename: string): string {
+    const p = path.basename(filename);
+    let lastIdx = p.length;
+    for (let i = lastIdx - 1; i >- 1; --i) {
+        const c = p[i];
+        if (c == '.') {
+            lastIdx = i;
+        }
+    }
+    return p.substr(0, lastIdx);
+}
+
+/**
  * copy file sync
  * @param src 
  * @param dest 

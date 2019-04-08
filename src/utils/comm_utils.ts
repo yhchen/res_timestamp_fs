@@ -1,13 +1,15 @@
-export function count(o: any){
-	var t = typeof o;
-	if(t == 'string'){
+
+// get object member count
+export function count(o: any) {
+	let t = typeof o;
+	if(t == 'string') {
 			return o.length;
-	}else if(t == 'object'){
-			var n = 0;
-			for(var i in o){
+	}else if(t == 'object') {
+			let n = 0;
+			for(let _ in o) {
 					n++;
 			}
 			return n;
 	}
-	return false;
+	return 0;
 }
