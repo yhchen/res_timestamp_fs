@@ -49,11 +49,18 @@ namespace rf_runtime
 
 	rf_helper::~rf_helper()
 	{
-		for (auto& rInfo : _vInfos)
+		while (_alloc_list)
 		{
-			delete rInfo;
+			free(_alloc_list->data);
+			const auto curr_node = _alloc_list;
+			_alloc_list = _alloc_list->prev;
+			free(curr_node);
 		}
 		_vInfos.clear();
+		if (_stringBuffers) {
+			free((void*)_stringBuffers);
+			_stringBuffers = nullptr;
+		}
 	}
 
 	bool rf_helper::read_from_file(const char* file)
@@ -78,55 +85,68 @@ namespace rf_runtime
 			printf("file size incorrect(header size not enought)!");
 			return false;
 		}
-		rf_runtime_impl::CSampleBufferReader reader(data, size, 0);
-		reader.readBuffer(&header.IDENT, sizeof(header.IDENT));
+		rf_runtime_impl::CSampleBufferReader headerReader(data, size, 0);
+		headerReader.readBuffer(&header.IDENT, sizeof(header.IDENT));
 		if (header.IDENT.ui != FILE_IDENT.ui) {
 			printf("file ident incorrect! expcet : [%s] current : [%4s]", FILE_IDENT.s, header.IDENT.s);
 			return false;
 		}
 
-		reader.readAtom(header.littleEndian);
-		reader.setLittleEndian(header.littleEndian);
+		headerReader.readAtom(header.littleEndian);
+		headerReader.setLittleEndian(header.littleEndian);
 		printf("file endian mode : %s", header.littleEndian ? "Little endian" : "Big endian");
-		reader.readAtom(header.compressType);
-		reader.readBuffer(header.__reserve, sizeof(header.__reserve));
-		reader.readAtom((unsigned int&)header.fileVersion);
+		headerReader.readAtom(header.compressType);
+		headerReader.readBuffer(header.__reserve, sizeof(header.__reserve));
+		headerReader.readAtom((unsigned int&)header.fileVersion);
 		if (header.fileVersion != EFileVersion::VCURRENT) {
 			printf("file version : %x not match target file version :%x", header.fileVersion, EFileVersion::VCURRENT);
 			return false;
 		}
 
-		reader.readAtom(header.originDataSize);
-		reader.readAtom(header.compressionDataSize);
-		reader.readAtom(header.stringDataSize);
-		reader.readAtom(header.stringDataCount);
-		reader.readAtom(header.fileInfoDataSize);
-		reader.readAtom(header.fileInfoDataCount);
-		reader.setOffset(sizeof(RFHeaderData));
+		headerReader.readAtom(header.originDataSize);
+		headerReader.readAtom(header.compressionDataSize);
+		headerReader.readAtom(header.stringDataSize);
+		headerReader.readAtom(header.stringDataCount);
+		headerReader.readAtom(header.fileInfoDataSize);
+		headerReader.readAtom(header.fileInfoDataCount);
+		headerReader.setOffset(sizeof(RFHeaderData));
 
 		// FIXME £ºadd code here
+		const void* data_buffer = headerReader.offsetPtr();
+		unsigned int data_size = headerReader.available();
+		bool need_free_buffer = false;
 		if (header.compressType != 0)
 		{
-			if (reader.available() != header.compressionDataSize)
+			if (headerReader.available() != header.compressionDataSize)
 			{
-				printf("uncompress file size not match(current : %d expect : %d).", reader.available(), header.originDataSize);
+				printf("uncompress file size not match(current : %d expect : %d).", headerReader.available(), header.originDataSize);
 				return false;
 			}
-			rf_runtime_impl_miniz::decompress_zip(reader.offsetPtr(), header.compressionDataSize, 0);
-			return false;
+			const void* decompression_buffer = headerReader.offsetPtr();
+			unsigned int decompression_size = headerReader.available();
+			if (!rf_runtime_impl_miniz::decompress_zip_stream(headerReader.offsetPtr(), header.compressionDataSize, decompression_size, &decompression_buffer, 0)) {
+				return false;
+			}
+			data_buffer = decompression_buffer;
+			data_size = decompression_size;
+			need_free_buffer = true;
 		}
-		if (reader.available() != header.originDataSize)
+
+		if (data_size != header.originDataSize)
 		{
-			printf("file size not match(current : %d expect : %d).", reader.available(), header.originDataSize);
+			printf("file size not match(current : %d expect : %d).", data_size, header.originDataSize);
 			return false;
 		}
 		// read string table
 		std::vector<const char*> vStringTable(header.stringDataCount);
+		_stringBuffers = (const char*)malloc(header.stringDataSize);
+		memcpy((void*)_stringBuffers, data_buffer, header.stringDataSize);
+		auto stringReader = rf_runtime_impl::CSampleBufferReader(_stringBuffers, header.stringDataSize);
 		const char** stringData = vStringTable.data();
 		{
 			for (unsigned int i = 0; i < header.stringDataCount; ++i)
 			{
-				const char* p = reader.readStrLT255();
+				const char* p = stringReader.readStrLT255();
 				if (p == nullptr)
 				{
 					printf("string table data error.");
@@ -136,25 +156,28 @@ namespace rf_runtime
 			}
 		}
 		// read file info
-		if (reader.available() < header.fileInfoDataSize)
+		rf_runtime_impl::CSampleBufferReader dataReader(data_buffer, header.fileInfoDataSize, header.stringDataSize, header.littleEndian);
+		if (dataReader.available() < header.fileInfoDataSize)
 		{
-			printf("file data size not match(current : %d expect : %d).", reader.available(), header.fileInfoDataSize);
+			printf("file data size not match(current : %d expect : %d).", dataReader.available(), header.fileInfoDataSize);
 			return false;
 		}
 		{
-			RFFileInfo* infoLst = new RFFileInfo[header.fileInfoDataCount];
+			RFFileInfo* infoLst = allocFileInfo(header.fileInfoDataCount);
 			_vInfos.resize(header.fileInfoDataCount);
 			const RFFileInfo** fileData = (const RFFileInfo**)_vInfos.data();
 			for (unsigned int i = 0; i < header.fileInfoDataCount; ++i) {
 				auto* pData = &infoLst[i];
 				unsigned short nPathIdx = 0, nNameIdx = 0;
-				reader.readAtom(nPathIdx).readAtom(nNameIdx).readAtom(pData->crcvalue).readAtom(pData->filesize);
+				dataReader.readAtom(nPathIdx).readAtom(nNameIdx).readAtom(pData->crcvalue).readAtom(pData->filesize);
 				pData->spath = stringData[nPathIdx];
 				pData->sname = stringData[nNameIdx];
 				fileData[i] = pData;
 			}
 		}
-
+		if (need_free_buffer) {
+			free((void*)data_buffer); data_buffer = nullptr;
+		}
 		return true;
 	}
 
@@ -162,5 +185,23 @@ namespace rf_runtime
 	{
 		// FIXME £ºadd code here
 		return false;
+	}
+
+	rf_helper::RFFileInfo* rf_helper::allocFileInfo(int count, bool auto_memset/* = false*/)
+	{
+		const size_t mem_size = sizeof(RFFileInfo) * count;
+		RFFileInfo* infoLst = (RFFileInfo*)malloc(mem_size);
+		auto new_node = (alloc_list*)malloc(sizeof(alloc_list));
+		if (_alloc_list == nullptr) {
+			_alloc_list = new_node;
+			new_node->prev = nullptr;
+		}
+		else {
+			new_node->prev = _alloc_list;
+			_alloc_list = new_node;
+		}
+		new_node->data = infoLst;
+		if (auto_memset) memset(infoLst, 0, mem_size);
+		return infoLst;
 	}
 }

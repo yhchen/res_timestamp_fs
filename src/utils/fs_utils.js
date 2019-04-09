@@ -230,4 +230,23 @@ function makeTempFile(name) {
     });
 }
 exports.makeTempFile = makeTempFile;
+const delayRemoveList = new Array();
+process.on('beforeExit', () => {
+    for (const p of delayRemoveList) {
+        if (fs.existsSync(p)) {
+            rm(p);
+        }
+    }
+});
+function makeTempDirectory(perfix) {
+    const tempPathPrefix = path.join(os.tmpdir(), perfix || 'tmp-fs-utils-dir');
+    const tempPath = fs.mkdtempSync(tempPathPrefix, { encoding: null });
+    console.log(`create temporary directory : ${tempPath}`);
+    if (!mkdir(tempPath)) {
+        console.log(`mkdir ${tempPath} failure!`);
+    }
+    delayRemoveList.push(tempPath);
+    return tempPath;
+}
+exports.makeTempDirectory = makeTempDirectory;
 //# sourceMappingURL=fs_utils.js.map

@@ -32,5 +32,14 @@ namespace rf_runtime
 		struct RFFileInfo;
 	private:
 		std::vector<RFFileInfo*> _vInfos;
+		const char* _stringBuffers = nullptr;
+
+	private:
+		/* allocation for speed up */
+		RFFileInfo* allocFileInfo(int count, bool auto_memset = false);
+		struct alloc_list {
+			RFFileInfo* data = nullptr;
+			alloc_list *prev = nullptr;
+		} *_alloc_list;
 	};
 }

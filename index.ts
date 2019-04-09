@@ -86,11 +86,10 @@ async function mainAsync(): Promise<number> {
         console.error(ex);
         return -10001;
     }
-    return 0;
 }
 
 async function main() {
-    process.exit(await mainAsync());
+    process.exitCode = await mainAsync();
 }
 
 // call main

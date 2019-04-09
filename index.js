@@ -101,12 +101,11 @@ function mainAsync() {
             console.error(ex);
             return -10001;
         }
-        return 0;
     });
 }
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
-        process.exit(yield mainAsync());
+        process.exitCode = yield mainAsync();
     });
 }
 // call main

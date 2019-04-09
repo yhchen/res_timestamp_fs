@@ -194,7 +194,6 @@ export function rm(dir: string): boolean {
             fs.rmdirSync(dir);
         }
     }
-
     return !fs.existsSync(dir);
 }
 
@@ -210,4 +209,24 @@ export async function makeTempFile(name?: string): Promise<string> {
             resolve(file_name);
         });
     });
+}
+
+const delayRemoveList = new Array<string>();
+process.on('beforeExit', ()=>{
+    for (const p of delayRemoveList) {
+        if (fs.existsSync(p)) {
+            rm(p);
+        }
+    }
+});
+
+export function makeTempDirectory(perfix?: string): string {
+    const tempPathPrefix = path.join(os.tmpdir(), perfix||'tmp-fs-utils-dir');
+    const tempPath = fs.mkdtempSync(tempPathPrefix, {encoding:null});
+    console.log(`create temporary directory : ${tempPath}`);
+    if (!mkdir(tempPath)) {
+        console.log(`mkdir ${tempPath} failure!`);
+    }
+    delayRemoveList.push(tempPath);
+    return tempPath;
 }

@@ -79,36 +79,58 @@ export function doZipWithFileList(fileLst: string[], resDir: string, dest: strin
 	console.info(`start compress zip [${dest}]...`);
 }
 
+// -------------------- for test... --------------------
+// import * as unzip from "unzip";
+// import * as stream from 'stream';
+// -------------------- for test... --------------------
+
 export async function zipWithStream(buffer: Buffer, level: number = 6, entryName: string = 'ZipBytes'): Promise<Buffer> {
 	const storeMode = level <= 0;
 	level = Math.min(Math.max(0, level), 9);
 	console.info(`start compress zip stream...`);
-	const tmpfile = await fs_utils.makeTempFile(); // don't input keep will clean after itself
+	const tmpdir = await fs_utils.makeTempDirectory();
+	const tmpfile = path.join(tmpdir, Date.now().toString() + '.zip');
 	let output = fs.createWriteStream(tmpfile);
 	let zip = archiver.create('zip', {zlib:{level}, store:storeMode});
 	zip.pipe(output);
 	zip.append(buffer, {name : entryName});
+	zip.finalize();
 	return new Promise((resolve, reject)=>{
 		zip.on('finish', ()=>{
-			console.info(`* compress zip stream complete success!`);
-			const compression_buffer = fs.readFileSync(tmpfile, {encoding:null});
-			console.info(`* origin size : ${buffer.byteLength}    compress size : ${compression_buffer.byteLength}      precent : ${Math.round(compression_buffer.byteLength / buffer.byteLength * 10000) / 100}%`);
-			resolve(compression_buffer);
-			fs_utils.rm(tmpfile);
+			setTimeout(() => { // delay handle due to date incomplete
+				console.info(`* compress zip stream complete success!`);
+				const compression_buffer = fs.readFileSync(output.path, {encoding:null});
+				console.info(`* origin size : ${buffer.byteLength}    compress size : ${compression_buffer.byteLength}      precent : ${Math.round(compression_buffer.byteLength / buffer.byteLength * 10000) / 100}%`);
+				resolve(compression_buffer);
+
+				// -------------------- for test... --------------------
+				// new stream.PassThrough()
+				//  .pipe(unzip.Parse())
+				//  .on('entry', function (entry: unzip.Entry) {
+				//    var fileName = entry.path;
+				//    var type = entry.type; // 'Directory' or 'File'
+				//    var size = entry.size;
+				//    if (fileName === "this IS the file I'm looking for") {
+				//      entry.pipe(fs.createWriteStream('output/path'));
+				//    } else {
+				//      entry.autodrain();
+				//    }
+				//  })
+				//  .end(compression_buffer);
+				// -------------------- for test... --------------------
+
+			}, 16);
 		});
-		// zip.on('data', (data)=>{
-		// 	console.log(data);
+		// zip.on('data', (data: archiver.EntryData)=>{
+		// 	// console.log(data);
 		// })
 		const onWarningOrError = (errorMsg: archiver.ArchiverError) => {
 			fs.unlinkSync(tmpfile);
 			console.error(`* compress zip stream failure!`);
 			console.error(errorMsg.message);
-			fs_utils.rm(tmpfile);
 			reject(errorMsg.message);
-
 		}
 		zip.on('error', onWarningOrError);
 		zip.on('warning', onWarningOrError);
-		zip.finalize();
 	});
 }
