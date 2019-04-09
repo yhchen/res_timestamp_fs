@@ -22,7 +22,6 @@
     "@types/buffer-crc32": "^0.2.0",
     "@types/micromatch": "^3.1.0",
     "@types/node": "^11.13.0",
-    "@types/tmp": "^0.1.0",
     "tslint": "^5.15.0",
     "typescript": "^3.4.1",
     "typescript-tslint-plugin": "^0.3.1"
@@ -31,7 +30,6 @@
     "archiver": "^3.0.0",
     "argv": "0.0.2",
     "buffer-crc32": "^0.2.13",
-    "micromatch": "^3.1.10",
-    "tmp": "^0.1.0"
+    "micromatch": "^3.1.10"
   }
 }

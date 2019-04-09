@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crc32 from 'buffer-crc32';
 import * as config_tpl from '../config_tpl.json';
-import * as comm_utils from './utils/comm_utils';
 import * as match_utils from './utils/match_utils';
 import {BufferWriter} from './utils/buffer/BufferWriter'
 import * as zlib_utils from './utils/zlib_utils';
@@ -25,7 +24,6 @@ type FMSFileInfo = {
 // header version
 const HeaderVersion = 0x01190404;
 const HeaderIdent = new Buffer('FTS\0');
-const HeaderIdent_NoCompress = new Buffer('FTC\0');
 
 class CStringTable {
 	public calcIdx(s: string): number {
@@ -119,7 +117,7 @@ async function makeBuffer(config: typeof config_tpl, fmtData : CFMSFData) : Prom
 							&& config.compress.type < zlib_utils.ECompressType.Max;
 
 	const littleEndian = config.endian == 'LE';
-	console.log(`compression mode : ${useCompression?zlib_utils.ECompressType[config.compress.type] + "level : " + (config.compress.level || "default (6)"):"No Compression data"}`);
+	console.log(`compression mode : ${useCompression?zlib_utils.ECompressType[config.compress.type] + " level : " + (config.compress.level || "default (6)"):"No Compression data"}`);
 
 	// calc buff size
 	const HeaderSize = 64; // header size
@@ -157,8 +155,8 @@ async function makeBuffer(config: typeof config_tpl, fmtData : CFMSFData) : Prom
 
 	// write header
 	const headerWriter = new BufferWriter(HeaderSize);
+	headerWriter.writeBuffer(HeaderIdent); // ident
 	headerWriter.setLittleEndianMode(littleEndian);
-	headerWriter.writeBuffer(useCompression ? HeaderIdent : HeaderIdent_NoCompress); // ident
 	headerWriter.writeUint8(littleEndian ? 1 : 0); // file version
 	headerWriter.writeUint8(useCompression ? config.compress.type : 0); // compression type
 	headerWriter.writeBuffer(Buffer.alloc(2)); // reserved
@@ -167,8 +165,8 @@ async function makeBuffer(config: typeof config_tpl, fmtData : CFMSFData) : Prom
 	headerWriter.writeUint32(dataBuffer.byteLength); // compression size
 	headerWriter.writeUint32(stringTableDataSize); // string table size
 	headerWriter.writeUint32(fmtData.stringTable.stringTable.length); // string count
-	headerWriter.writeUint32(fmtData.files.length); // file count
 	headerWriter.writeUint32(fileInfoDataSize); // file size
+	headerWriter.writeUint32(fmtData.files.length); // file count
 	const headerReservedSize = HeaderSize - headerWriter.position;
 	if (headerReservedSize < 0) {
 		Promise.reject(`write header error. header size incorrect(expect:${HeaderSize} actual:${headerWriter.position})`);

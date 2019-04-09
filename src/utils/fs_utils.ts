@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 /**
@@ -195,4 +196,18 @@ export function rm(dir: string): boolean {
     }
 
     return !fs.existsSync(dir);
+}
+
+export async function makeTempFile(name?: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const tempPath = path.join(os.tmpdir(), 'tmp-fs-utils-dir');
+        fs.mkdtemp(tempPath, (err, folder) => {
+            if (err) {
+                return reject(err)
+            }
+            const file_name = path.join(folder, name||Date.now().toString());
+            console.log(`create temporary file : ${file_name}`);
+            resolve(file_name);
+        });
+    });
 }

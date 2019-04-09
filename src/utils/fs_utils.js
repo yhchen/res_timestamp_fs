@@ -1,4 +1,12 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -8,6 +16,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
+const os = __importStar(require("os"));
 const path = __importStar(require("path"));
 /**
  * create directory recursive
@@ -205,4 +214,20 @@ function rm(dir) {
     return !fs.existsSync(dir);
 }
 exports.rm = rm;
+function makeTempFile(name) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise((resolve, reject) => {
+            const tempPath = path.join(os.tmpdir(), 'tmp-fs-utils-dir');
+            fs.mkdtemp(tempPath, (err, folder) => {
+                if (err) {
+                    return reject(err);
+                }
+                const file_name = path.join(folder, name || Date.now().toString());
+                console.log(`create temporary file : ${file_name}`);
+                resolve(file_name);
+            });
+        });
+    });
+}
+exports.makeTempFile = makeTempFile;
 //# sourceMappingURL=fs_utils.js.map

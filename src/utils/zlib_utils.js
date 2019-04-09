@@ -16,10 +16,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const zlib = __importStar(require("zlib"));
-const tmp = __importStar(require("tmp"));
 const archiver = __importStar(require("archiver"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+const fs_utils = __importStar(require("./fs_utils"));
 var ECompressType;
 (function (ECompressType) {
     ECompressType[ECompressType["NoComp"] = 0] = "NoComp";
@@ -101,24 +101,29 @@ function zipWithStream(buffer, level = 6, entryName = 'ZipBytes') {
         const storeMode = level < 0;
         level = Math.min(Math.max(0, level), 9);
         console.info(`start compress zip stream...`);
-        const tmpfile = tmp.fileSync(); // don't input keep will clean after itself
-        let output = fs.createWriteStream(tmpfile.name);
+        const tmpfile = yield fs_utils.makeTempFile(); // don't input keep will clean after itself
+        let output = fs.createWriteStream(tmpfile);
         let zip = archiver.create('zip', { zlib: { level: level }, store: storeMode });
         zip.pipe(output);
         zip.append(buffer, { name: entryName });
-        zip.finalize();
         return new Promise((resolve, reject) => {
             zip.on('finish', () => {
                 console.info(`* compress zip stream complete success!`);
-                const compression_buffer = fs.readFileSync(tmpfile.fd, { encoding: null });
+                const compression_buffer = fs.readFileSync(tmpfile, { encoding: null });
+                console.info(`* origin size : ${buffer.byteLength}    compress size : ${compression_buffer.byteLength}      precent : ${Math.round(compression_buffer.byteLength / buffer.byteLength * 10000) / 100}%`);
+                fs_utils.rm(tmpfile);
                 resolve(compression_buffer);
             });
-            zip.on('error', (errorMsg) => {
-                fs.unlinkSync(tmpfile.name);
+            const onWarningOrError = (errorMsg) => {
+                fs.unlinkSync(tmpfile);
                 console.error(`* compress zip stream failure!`);
                 console.error(errorMsg.message);
+                fs_utils.rm(tmpfile);
                 reject(errorMsg.message);
-            });
+            };
+            zip.on('error', onWarningOrError);
+            zip.on('warning', onWarningOrError);
+            zip.finalize();
         });
     });
 }
