@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="rf_runtime.h" />
+    <ClInclude Include="rf_runtime_imp.hpp" />
+    <ClInclude Include="convert_endian.hpp" />
+    <ClInclude Include="miniz\miniz_tdef.h">
+      <Filter>miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="miniz\miniz_tinfl.h">
+      <Filter>miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="miniz\miniz_zip.h">
+      <Filter>miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="miniz\miniz.h">
+      <Filter>miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="miniz\miniz_common.h">
+      <Filter>miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="compression_utils.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="rf_runtime.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="miniz\miniz_tinfl.c">
+      <Filter>miniz</Filter>
+    </ClCompile>
+    <ClCompile Include="miniz\miniz_zip.c">
+      <Filter>miniz</Filter>
+    </ClCompile>
+    <ClCompile Include="miniz\miniz.c">
+      <Filter>miniz</Filter>
+    </ClCompile>
+    <ClCompile Include="miniz\miniz_tdef.c">
+      <Filter>miniz</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="miniz">
+      <UniqueIdentifier>{3f331a6f-bc4d-4c30-9650-f26daa540ca1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

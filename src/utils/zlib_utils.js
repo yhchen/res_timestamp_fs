@@ -98,12 +98,12 @@ function doZipWithFileList(fileLst, resDir, dest) {
 exports.doZipWithFileList = doZipWithFileList;
 function zipWithStream(buffer, level = 6, entryName = 'ZipBytes') {
     return __awaiter(this, void 0, void 0, function* () {
-        const storeMode = level < 0;
+        const storeMode = level <= 0;
         level = Math.min(Math.max(0, level), 9);
         console.info(`start compress zip stream...`);
         const tmpfile = yield fs_utils.makeTempFile(); // don't input keep will clean after itself
         let output = fs.createWriteStream(tmpfile);
-        let zip = archiver.create('zip', { zlib: { level: level }, store: storeMode });
+        let zip = archiver.create('zip', { zlib: { level }, store: storeMode });
         zip.pipe(output);
         zip.append(buffer, { name: entryName });
         return new Promise((resolve, reject) => {
@@ -111,9 +111,12 @@ function zipWithStream(buffer, level = 6, entryName = 'ZipBytes') {
                 console.info(`* compress zip stream complete success!`);
                 const compression_buffer = fs.readFileSync(tmpfile, { encoding: null });
                 console.info(`* origin size : ${buffer.byteLength}    compress size : ${compression_buffer.byteLength}      precent : ${Math.round(compression_buffer.byteLength / buffer.byteLength * 10000) / 100}%`);
-                fs_utils.rm(tmpfile);
                 resolve(compression_buffer);
+                // fs_utils.rm(tmpfile);
             });
+            // zip.on('data', (data)=>{
+            // 	console.log(data);
+            // })
             const onWarningOrError = (errorMsg) => {
                 fs.unlinkSync(tmpfile);
                 console.error(`* compress zip stream failure!`);

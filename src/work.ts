@@ -114,10 +114,11 @@ function makeFMTData(config: typeof config_tpl, fileInfoLst: Array<FileInfo>): C
 async function makeBuffer(config: typeof config_tpl, fmtData : CFMSFData) : Promise<Uint8Array> {
 	const useCompression = config.compress && config.compress.type 
 							&& config.compress.type > zlib_utils.ECompressType.NoComp 
-							&& config.compress.type < zlib_utils.ECompressType.Max;
+							&& config.compress.type < zlib_utils.ECompressType.Max
+							&& config.compress.level > 0 && config.compress.level < 10;
 
 	const littleEndian = config.endian == 'LE';
-	console.log(`compression mode : ${useCompression?zlib_utils.ECompressType[config.compress.type] + " level : " + (config.compress.level || "default (6)"):"No Compression data"}`);
+	console.log(`compression mode : ${useCompression?zlib_utils.ECompressType[config.compress.type] + " level : " + (config.compress.level || "default (6)"):"No Compression"}`);
 
 	// calc buff size
 	const HeaderSize = 64; // header size
@@ -157,7 +158,7 @@ async function makeBuffer(config: typeof config_tpl, fmtData : CFMSFData) : Prom
 	const headerWriter = new BufferWriter(HeaderSize);
 	headerWriter.writeBuffer(HeaderIdent); // ident
 	headerWriter.setLittleEndianMode(littleEndian);
-	headerWriter.writeUint8(littleEndian ? 1 : 0); // file version
+	headerWriter.writeUint8(littleEndian ? 1 : 0); // endian mode 1 : little endian 0 : big endian
 	headerWriter.writeUint8(useCompression ? config.compress.type : 0); // compression type
 	headerWriter.writeBuffer(Buffer.alloc(2)); // reserved
 	headerWriter.writeUint32(HeaderVersion); // file version

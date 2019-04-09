@@ -3,3 +3,6 @@
 /test/files
 /test/res.timestamp
 /test
+/.vscode/ipch
+/library/cpp/rf_runtime/Debug
+/library/cpp/rf_runtime/.vs

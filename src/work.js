@@ -117,9 +117,10 @@ function makeBuffer(config, fmtData) {
     return __awaiter(this, void 0, void 0, function* () {
         const useCompression = config.compress && config.compress.type
             && config.compress.type > zlib_utils.ECompressType.NoComp
-            && config.compress.type < zlib_utils.ECompressType.Max;
+            && config.compress.type < zlib_utils.ECompressType.Max
+            && config.compress.level > 0 && config.compress.level < 10;
         const littleEndian = config.endian == 'LE';
-        console.log(`compression mode : ${useCompression ? zlib_utils.ECompressType[config.compress.type] + " level : " + (config.compress.level || "default (6)") : "No Compression data"}`);
+        console.log(`compression mode : ${useCompression ? zlib_utils.ECompressType[config.compress.type] + " level : " + (config.compress.level || "default (6)") : "No Compression"}`);
         // calc buff size
         const HeaderSize = 64; // header size
         const FileInfoSize = 2 /*path idx*/ + 2 /* name idx */ + 4 /* crc32 */ + 4 /* file size */;
@@ -156,7 +157,7 @@ function makeBuffer(config, fmtData) {
         const headerWriter = new BufferWriter_1.BufferWriter(HeaderSize);
         headerWriter.writeBuffer(HeaderIdent); // ident
         headerWriter.setLittleEndianMode(littleEndian);
-        headerWriter.writeUint8(littleEndian ? 1 : 0); // file version
+        headerWriter.writeUint8(littleEndian ? 1 : 0); // endian mode 1 : little endian 0 : big endian
         headerWriter.writeUint8(useCompression ? config.compress.type : 0); // compression type
         headerWriter.writeBuffer(Buffer.alloc(2)); // reserved
         headerWriter.writeUint32(HeaderVersion); // file version
