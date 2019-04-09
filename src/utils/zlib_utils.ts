@@ -94,7 +94,7 @@ export async function zipWithStream(buffer: Buffer, level: number = 6, entryName
 			const compression_buffer = fs.readFileSync(tmpfile, {encoding:null});
 			console.info(`* origin size : ${buffer.byteLength}    compress size : ${compression_buffer.byteLength}      precent : ${Math.round(compression_buffer.byteLength / buffer.byteLength * 10000) / 100}%`);
 			resolve(compression_buffer);
-			// fs_utils.rm(tmpfile);
+			fs_utils.rm(tmpfile);
 		});
 		// zip.on('data', (data)=>{
 		// 	console.log(data);
