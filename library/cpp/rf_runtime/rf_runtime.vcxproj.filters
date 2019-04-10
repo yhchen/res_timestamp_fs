@@ -20,6 +20,7 @@
       <Filter>miniz</Filter>
     </ClInclude>
     <ClInclude Include="compression_utils.hpp" />
+    <ClInclude Include="rf_runtime_utils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="rf_runtime.cpp" />

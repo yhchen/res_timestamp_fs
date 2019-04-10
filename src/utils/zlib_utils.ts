@@ -7,8 +7,8 @@ import * as fs_utils from './fs_utils'
 export enum ECompressType {
 	NoComp = 0, // no compression
 	Zip = 1, // zip
-	GZip = 2, // gzip
-	Flate = 3, //inflate and deflate
+	Flate = 2, //inflate and deflate
+	GZip = 3, // gzip
 
 	Max // Max
 }
@@ -17,7 +17,8 @@ export async function compressStream(src: zlib.InputType, type: ECompressType, o
 	switch (type) {
 		case ECompressType.GZip:
 		{
-			return zlib.gzipSync(src, options);
+			// return zlib.gzipSync(src, options); // gzip temporary not support(use deflate instand)
+			return zlib.deflateSync(src, options);
 		}
 		case ECompressType.Flate:
 		{

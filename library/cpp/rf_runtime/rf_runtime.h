@@ -42,4 +42,7 @@ namespace rf_runtime
 			alloc_list *prev = nullptr;
 		} *_alloc_list;
 	};
+
+	typedef void(logFuncFmt(const char* fmt, ...));
+	void setDefaultLogFunc(logFuncFmt* func);
 }

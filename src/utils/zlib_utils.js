@@ -24,8 +24,8 @@ var ECompressType;
 (function (ECompressType) {
     ECompressType[ECompressType["NoComp"] = 0] = "NoComp";
     ECompressType[ECompressType["Zip"] = 1] = "Zip";
-    ECompressType[ECompressType["GZip"] = 2] = "GZip";
-    ECompressType[ECompressType["Flate"] = 3] = "Flate";
+    ECompressType[ECompressType["Flate"] = 2] = "Flate";
+    ECompressType[ECompressType["GZip"] = 3] = "GZip";
     ECompressType[ECompressType["Max"] = 4] = "Max"; // Max
 })(ECompressType = exports.ECompressType || (exports.ECompressType = {}));
 function compressStream(src, type, options) {
@@ -33,7 +33,8 @@ function compressStream(src, type, options) {
         switch (type) {
             case ECompressType.GZip:
                 {
-                    return zlib.gzipSync(src, options);
+                    // return zlib.gzipSync(src, options); // gzip temporary not support(use deflate instand)
+                    return zlib.deflateSync(src, options);
                 }
             case ECompressType.Flate:
                 {

@@ -3,8 +3,8 @@
 	"endian": "LE",
 	"strip_ext": true,
 	"compress": {
-		"type help - ": "0:no compression 1:zip 2:gzip 3:flate(deflate and inflate)",
-		"type": 1,
+		"type help - ": "0:no compression 1:zip 2:flate(deflate and inflate) 3:gzip(temporary not support)",
+		"type": 3,
 		"level": 9
 	},
 	"list": [

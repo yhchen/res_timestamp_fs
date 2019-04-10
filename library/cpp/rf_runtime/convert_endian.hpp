@@ -130,7 +130,7 @@
 #include <stdint.h>
 #include <limits.h>
 
-namespace rf_runtime_impl
+namespace rf_runtime_inn_impl
 {
 	static __inline uint16_t end_bswap16(uint16_t __x)
 	{

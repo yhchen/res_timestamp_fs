@@ -127,6 +127,7 @@
     <ClInclude Include="miniz\miniz_tinfl.h" />
     <ClInclude Include="miniz\miniz_zip.h" />
     <ClInclude Include="rf_runtime.h" />
+    <ClInclude Include="rf_runtime_utils.hpp" />
     <ClInclude Include="rf_runtime_imp.hpp" />
   </ItemGroup>
   <ItemGroup>
