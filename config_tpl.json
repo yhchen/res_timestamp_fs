@@ -4,7 +4,7 @@
 	"strip_ext": true,
 	"compress": {
 		"type help - ": "0:no compression 1:zip 2:flate(deflate and inflate) 3:gzip(temporary not support)",
-		"type": 3,
+		"type": 1,
 		"level": 9
 	},
 	"list": [

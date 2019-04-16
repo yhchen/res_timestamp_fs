@@ -22,6 +22,7 @@ const match_utils = __importStar(require("./utils/match_utils"));
 const BufferWriter_1 = require("./utils/buffer/BufferWriter");
 const zlib_utils = __importStar(require("./utils/zlib_utils"));
 const fs_utils = __importStar(require("./utils/fs_utils"));
+const comm_utils_js_1 = require("./utils/comm_utils.js");
 // header version
 const HeaderVersion = 0x01190404;
 const HeaderIdent = new Buffer('FTS\0');
@@ -90,13 +91,17 @@ function makeFileInfoList(config, fileInfoLst) {
                 relative_path: path.relative(filter.relative, p).replace(/\\/g, '/'),
                 crc: crc32.unsigned(buff),
                 size: buff.byteLength };
-            fileInfoLst.push(fi);
             if (fileRelativeMap.has(fi.relative_path)) {
                 throw `duplicate relative path [${fi.relative_path}] at [${fileRelativeMap.get(fi.relative_path)}] and [${fi.path}]`;
             }
+            fileInfoLst.push(fi);
             fileRelativeMap.set(fi.relative_path, fi.path);
         }
     }
+    fileInfoLst.sort((a, b) => {
+        return comm_utils_js_1.compareStr(a.relative_path, b.relative_path);
+    });
+    console.log(`total found file : ${fileInfoLst.length}`);
     return true;
 }
 function makeFMTData(config, fileInfoLst) {

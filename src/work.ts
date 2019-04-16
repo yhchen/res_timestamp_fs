@@ -6,6 +6,7 @@ import * as match_utils from './utils/match_utils';
 import {BufferWriter} from './utils/buffer/BufferWriter'
 import * as zlib_utils from './utils/zlib_utils';
 import * as fs_utils from './utils/fs_utils';
+import { compareStr } from './utils/comm_utils.js';
 
 type FileInfo = {
 	path: string;
@@ -86,13 +87,17 @@ function makeFileInfoList(config: typeof config_tpl, fileInfoLst: Array<FileInfo
 								  relative_path	:path.relative(filter.relative, p).replace(/\\/g, '/'),
 								  crc:			crc32.unsigned(buff),
 								  size:			buff.byteLength};
-			fileInfoLst.push(fi);
 			if (fileRelativeMap.has(fi.relative_path)) {
 				throw `duplicate relative path [${fi.relative_path}] at [${fileRelativeMap.get(fi.relative_path)}] and [${fi.path}]`;
 			}
+			fileInfoLst.push(fi);
 			fileRelativeMap.set(fi.relative_path, fi.path);
 		}
 	}
+	fileInfoLst.sort((a, b)=>{
+		return compareStr(a.relative_path, b.relative_path);
+	});
+	console.log(`total found file : ${fileInfoLst.length}`);
 	return true;
 }
 
