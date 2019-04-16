@@ -27,7 +27,7 @@ namespace rf_runtime
 	public:
 		bool read_from_file(const char* file);
 		bool read_from_data(const void* data, const size_t size);
-		bool compare(rf_helper& other, /*OUT*/CompareDiff& diff);
+		bool compare(const rf_helper& newVerHelper, /*OUT*/CompareDiff& diff) const;
 
 		struct RFFileInfo;
 	private:
@@ -43,6 +43,6 @@ namespace rf_runtime
 		} *_alloc_list;
 	};
 
-	typedef void(logFuncFmt(const char* fmt, ...));
-	void setDefaultLogFunc(logFuncFmt* func);
+	typedef void(logFunc(const char*const fmt, ...));
+	void setDefaultLogFunc(logFunc* func);
 }

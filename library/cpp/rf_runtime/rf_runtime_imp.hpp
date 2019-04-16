@@ -22,7 +22,7 @@ namespace rf_runtime_inn_impl
 	{
 	public:
 		CSampleBufferReader(const void* buffer, size_t size, size_t offset = 0, bool littleEndian = true)
-			: _data((char*)buffer), _end(_data + size), _offset(_data + offset), _littleEndian(littleEndian)
+			: _data((char*)buffer+offset), _end(_data + size), _offset(_data), _littleEndian(littleEndian)
 		{ }
 
 		template<typename _Ty> CSampleBufferReader& readAtom(_Ty& ty)
@@ -31,7 +31,7 @@ namespace rf_runtime_inn_impl
 				return *this;
 			memcpy(&ty, _offset, sizeof(ty));
 			_offset += sizeof(ty);
-			ty = _littleEndian ? LEtoNative(ty) : BEtoNative(ty);
+			ty = _littleEndian ? LEtoNative<_Ty>(ty) : BEtoNative<_Ty>(ty);
 			return *this;
 		}
 
@@ -81,4 +81,42 @@ namespace rf_runtime_inn_impl
 		const char* _end;
 		bool _littleEndian;
 	};
+
+	inline unsigned int stringHash(const char* s)
+	{
+		unsigned int hash = 5381;
+		int c = 0;
+		while (c = *s++)
+			hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+		return hash;
+	}
+
+	template <typename _Ty> inline _Ty _min(const _Ty& x, const _Ty&y) { return x > y ? y : x; }
+	template <typename _Ty> inline _Ty _max(const _Ty& x, const _Ty&y) { return x > y ? x : y; }
+
+	inline int compareStr(const char* a, const char* b)
+	{
+		size_t alen = 0;
+		if (a) alen = strlen(a);
+		size_t blen = 0;
+		if (b) blen = strlen(b);
+
+		if (alen != blen)
+			return ((alen > blen) ? 1 : -1);
+
+		for (int i = (int)_min(alen, blen) - 1; i > -1; --i)
+		{
+			const auto aa = a[i];
+			const auto bb = b[i];
+			if (aa != bb) return aa - bb;
+		}
+		return 0;
+	}
+
+	inline int compareFilePath(const char* tdir, const char* sdir, const char* tname, const char* sname)
+	{
+		const auto cmp = compareStr(tdir, sdir);
+		if (cmp != 0) return cmp;
+		return compareStr(tname, sname);
+	}
 }

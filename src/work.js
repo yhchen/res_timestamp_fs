@@ -98,9 +98,6 @@ function makeFileInfoList(config, fileInfoLst) {
             fileRelativeMap.set(fi.relative_path, fi.path);
         }
     }
-    fileInfoLst.sort((a, b) => {
-        return comm_utils_js_1.compareStr(a.relative_path, b.relative_path);
-    });
     console.log(`total found file : ${fileInfoLst.length}`);
     return true;
 }
@@ -110,11 +107,26 @@ function makeFMTData(config, fileInfoLst) {
         const separator = fi.relative_path.lastIndexOf('/');
         const filepath = fi.relative_path.substr(0, separator);
         const filename = fi.relative_path.substr(separator + 1);
-        const realfile_name = config.strip_ext ? fs_utils.getFileWithoutExtName(filename) : filename;
-        fmtData.files.push({ path_idx: fmtData.stringTable.calcIdx(filepath),
-            name_idx: fmtData.stringTable.calcIdx(realfile_name),
+        const realfile_name = config.strip_file_extension ? fs_utils.getFileWithoutExtName(filename) : filename;
+        fmtData.files.push({ spath: filepath,
+            sname: realfile_name,
+            path_idx: 0,
+            name_idx: 0,
             crc: fi.crc,
             size: fi.size });
+    }
+    // sort string
+    const cmp = (a, b) => {
+        const pcmd = comm_utils_js_1.compareStr(a.spath, b.spath);
+        if (pcmd != 0)
+            return pcmd;
+        return comm_utils_js_1.compareStr(a.sname, b.sname);
+    };
+    fmtData.files.sort(cmp);
+    // calc string idx
+    for (let file of fmtData.files) {
+        file.path_idx = fmtData.stringTable.calcIdx(file.spath);
+        file.name_idx = fmtData.stringTable.calcIdx(file.sname);
     }
     return fmtData;
 }

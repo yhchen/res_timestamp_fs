@@ -33,7 +33,7 @@ Usage: node ./index.js [options]
 {
     "endian help - ": "BE - Big endian      LE - Little endian",
     "endian": "LE",
-    "strip_ext": true,
+    "strip_file_extension": true,
     "compress": {
         "type help - ": "0: no compression 1: zip 2: gzip 3: flate(deflate and inflate)",
         "type": 1,

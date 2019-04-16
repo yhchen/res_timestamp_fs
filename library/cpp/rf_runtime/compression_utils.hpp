@@ -40,7 +40,9 @@ namespace rf_runtime_impl_miniz
 			rf_runtime_inn_impl::log("file name \"%s\" not exist!", ZipStreamFileName);
 			return false;
 		}
-		const void* buffers = mz_zip_reader_extract_to_heap(&zip, file_idx, &decompress_size, flags);
+		size_t tmpsz = 0;
+		const void* buffers = mz_zip_reader_extract_to_heap(&zip, file_idx, &tmpsz, flags);
+		decompress_size = (unsigned int)(tmpsz);
 		if (buffers == nullptr) {
 			rf_runtime_inn_impl::log("read file \"%s\" failure.(%s)", ZipStreamFileName, mz_zip_get_error_string(mz_zip_get_last_error(&zip)));
 			return false;
@@ -52,7 +54,7 @@ namespace rf_runtime_impl_miniz
 		return true;
 	}
 
-	bool inflate_stream(const void* pMem, size_t mem_size, unsigned int origin_size, unsigned int& decompress_size, const void** decompression_buffer, mz_uint flags, mz_zip_error* pErr = nullptr)
+	bool inflate_stream(const void* pMem, mz_ulong mem_size, unsigned int origin_size, unsigned int& decompress_size, const void** decompression_buffer, mz_uint flags, mz_zip_error* pErr = nullptr)
 	{
 		mz_ulong _outsize = origin_size;
 		unsigned char* buffers = (unsigned char*)malloc(_outsize);

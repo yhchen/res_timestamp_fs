@@ -6,3 +6,5 @@
 /.vscode/ipch
 /library/cpp/rf_runtime/Debug
 /library/cpp/rf_runtime/.vs
+/library/cpp/rf_runtime/x64
+/library/cpp/rf_runtime/Release

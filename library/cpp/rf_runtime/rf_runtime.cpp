@@ -3,9 +3,13 @@
 #include "rf_runtime_imp.hpp"
 #include "compression_utils.hpp"
 
+#if defined(_WIN32)
+#	include <windows.h>
+#endif
+
 namespace rf_runtime_inn_impl
 {
-	static void defaultPrintfFunc(const char const* fmt, ...)
+	void defaultPrintfFunc(const char * const fmt, ...)
 	{
 		static const size_t TmpStrSize = 1024;
 		thread_local static char outstr[TmpStrSize] = {};
@@ -25,7 +29,7 @@ namespace rf_runtime_inn_impl
 		printf(outstr);
 	}
 
-	logFuncFmt* log = defaultPrintfFunc;
+	logFuncFmt* log = &defaultPrintfFunc;
 }
 
 namespace rf_runtime
@@ -74,6 +78,7 @@ namespace rf_runtime
 	{
 		const char* spath = nullptr;
 		const char* sname = nullptr;
+		unsigned long long hash = 0;
 		unsigned int crcvalue = 0;
 		unsigned int filesize = 0;
 	};
@@ -150,7 +155,7 @@ namespace rf_runtime
 		headerReader.setOffset(sizeof(RFHeaderData));
 
 		const void* data_buffer = headerReader.offsetPtr();
-		unsigned int data_size = headerReader.available();
+		unsigned int data_size = (unsigned int)headerReader.available();
 		bool need_free_buffer = false;
 		if (header.compressType != 0)
 		{
@@ -160,7 +165,7 @@ namespace rf_runtime
 				return false;
 			}
 			const void* decompression_buffer = headerReader.offsetPtr();
-			unsigned int decompression_size = headerReader.available();
+			unsigned int decompression_size = (unsigned int)headerReader.available();
 			switch (header.compressType)
 			{
 			case EUncompressType::Zip:
@@ -237,10 +242,70 @@ namespace rf_runtime
 		return true;
 	}
 
-	bool rf_helper::compare(rf_helper& other, /*OUT*/CompareDiff& diff)
+	bool rf_helper::compare(const rf_helper& newVerHelper, /*OUT*/CompareDiff& diff) const
 	{
-		// FIXME £ºadd code here
-		return false;
+		thread_local static char stmp[512] = {};
+		const auto oSZ = _vInfos.size();
+		const auto nSZ = newVerHelper._vInfos.size();
+		size_t oIdx = 0, nIdx = 0;
+		bool oEnd = oIdx >= oSZ, nEnd = nIdx >= nSZ;
+		const auto oppD = _vInfos.data();
+		const auto nppD = newVerHelper._vInfos.data();
+
+// 		rf_runtime_inn_impl::log("-----------------------------------------------------\n");
+// 		for (auto& t : newVerHelper._vInfos)
+// 		{
+// 			rf_runtime_inn_impl::log("%s/%s\t\t%ud\t\t%ud", t->spath, t->sname, t->crcvalue, t->filesize);
+// 		}
+// 		rf_runtime_inn_impl::log("-----------------------------------------------------\n");
+// 		for (auto& t : _vInfos)
+// 		{
+// 			rf_runtime_inn_impl::log("%s/%s\t\t%ud\t\t%ud", t->spath, t->sname, t->crcvalue, t->filesize);
+// 		}
+
+		while (!nEnd)
+		{
+			if (!oEnd && !nEnd)
+			{
+				const auto* opD = oppD[oIdx];
+				const auto* npD = nppD[nIdx];
+				const auto cmp = rf_runtime_inn_impl::compareFilePath(opD->spath, npD->spath, opD->sname, npD->sname);
+				if (cmp == 0)
+				{
+					if (opD->crcvalue != npD->crcvalue || opD->filesize != npD->filesize)
+					{
+						snprintf(stmp, sizeof(stmp), "%s/%s", npD->spath, npD->sname);
+						diff.vChangedFiles.push_back(CompareDiff::FileInfo({ stmp, npD->filesize, npD->crcvalue }));
+					}
+					++oIdx; ++nIdx;
+				}
+				else if (cmp > 0)
+				{
+					snprintf(stmp, sizeof(stmp), "%s/%s", npD->spath, npD->sname);
+					diff.vNewFiles.push_back(CompareDiff::FileInfo({ stmp, npD->filesize, npD->crcvalue }));
+					++nIdx;
+				}
+				else if (cmp < 0)
+				{
+					++oIdx;
+				}
+			}
+			else if (oEnd)
+			{
+				const auto* npD = nppD[nIdx];
+				snprintf(stmp, sizeof(stmp), "%s/%s", npD->spath, npD->sname);
+				diff.vNewFiles.push_back(CompareDiff::FileInfo({stmp, npD->filesize, npD->crcvalue}));
+				++nIdx;
+			}
+			else
+			{
+				return false;
+			}
+			oEnd = oIdx >= oSZ;
+			nEnd = nIdx >= nSZ;
+		}
+
+		return true;
 	}
 
 	rf_helper::RFFileInfo* rf_helper::allocFileInfo(int count, bool auto_memset/* = false*/)
@@ -264,9 +329,9 @@ namespace rf_runtime
 	}
 
 
-	void setDefaultLogFunc(logFuncFmt *funcPtr) {
+	void setDefaultLogFunc(logFunc *funcPtr) {
 		if (funcPtr) {
-			rf_runtime_inn_impl::log = funcPtr;
+			rf_runtime_inn_impl::log = reinterpret_cast<rf_runtime_inn_impl::logFuncFmt*>(funcPtr);
 		}
 	}
 }
