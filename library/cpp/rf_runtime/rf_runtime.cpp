@@ -86,6 +86,10 @@ namespace rf_runtime
 		unsigned int crcvalue = 0;
 		unsigned int filesize = 0;
 	};
+	inline int compareFileInfo(const rf_helper::RFFileInfo& f1, const rf_helper::RFFileInfo& f2)
+	{
+		return rf_runtime_inn_impl::compareFilePath(f1.spath, f2.spath, f1.sname, f2.sname);
+	}
 
 	rf_helper::rf_helper()
 		: _pHeader(new RFHeaderData())
@@ -219,7 +223,7 @@ namespace rf_runtime
 		}
 		rf_runtime_inn_impl::log("total load file info count : %d			size : %d", _pHeader->fileInfoDataCount, _pHeader->fileInfoDataSize);
 		{
-			_vInfos.reserve(_pHeader->fileInfoDataCount);
+			_vInfos.resize(_pHeader->fileInfoDataCount);
 			RFFileInfo* infoLst = (RFFileInfo*)_vInfos.data();
 			for (unsigned int i = 0; i < _pHeader->fileInfoDataCount; ++i)
 			{
@@ -237,15 +241,16 @@ namespace rf_runtime
 		return true;
 	}
 
-	bool rf_helper::compare(const rf_helper& newVerHelper, /*OUT*/CompareDiff& diff) const
+	bool rf_helper::compare(const rf_helper& rNewVerHelper, /*OUT*/CompareDiff& diff) const
 	{
 		thread_local static char stmp[512] = {};
+		// 'o' is short for "old". 'n' is short for "new"
 		const auto oSZ = _vInfos.size();
-		const auto nSZ = newVerHelper._vInfos.size();
+		const auto nSZ = rNewVerHelper._vInfos.size();
 		size_t oIdx = 0, nIdx = 0;
 		bool oEnd = oIdx >= oSZ, nEnd = nIdx >= nSZ;
-		const auto oppD = _vInfos.data();
-		const auto nppD = newVerHelper._vInfos.data();
+		const auto oFileInfoList = _vInfos.data();
+		const auto nFileInfoList = rNewVerHelper._vInfos.data();
 
 // 		rf_runtime_inn_impl::log("-----------------------------------------------------\n");
 // 		for (auto& t : newVerHelper._vInfos)
@@ -262,22 +267,22 @@ namespace rf_runtime
 		{
 			if (!oEnd && !nEnd)
 			{
-				const auto& opD = oppD[oIdx];
-				const auto& npD = nppD[nIdx];
-				const auto cmp = rf_runtime_inn_impl::compareFilePath(opD.spath, npD.spath, opD.sname, npD.sname);
+				const auto& oFileInfo = oFileInfoList[oIdx];
+				const auto& nFileInfo = nFileInfoList[nIdx];
+				const auto cmp = compareFileInfo(oFileInfo, nFileInfo);
 				if (cmp == 0)
 				{
-					if (opD.crcvalue != npD.crcvalue || opD.filesize != npD.filesize)
+					if (oFileInfo.crcvalue != nFileInfo.crcvalue || oFileInfo.filesize != nFileInfo.filesize)
 					{
-						snprintf(stmp, sizeof(stmp), "%s/%s", npD.spath, npD.sname);
-						diff.vChangedFiles.push_back(CompareDiff::FileInfo({ stmp, npD.filesize, npD.crcvalue }));
+						snprintf(stmp, sizeof(stmp), "%s/%s", nFileInfo.spath, nFileInfo.sname);
+						diff.vChangedFiles.push_back(CompareDiff::FileInfo({ stmp, nFileInfo.filesize, nFileInfo.crcvalue }));
 					}
 					++oIdx; ++nIdx;
 				}
 				else if (cmp > 0)
 				{
-					snprintf(stmp, sizeof(stmp), "%s/%s", npD.spath, npD.sname);
-					diff.vNewFiles.push_back(CompareDiff::FileInfo({ stmp, npD.filesize, npD.crcvalue }));
+					snprintf(stmp, sizeof(stmp), "%s/%s", nFileInfo.spath, nFileInfo.sname);
+					diff.vNewFiles.push_back(CompareDiff::FileInfo({ stmp, nFileInfo.filesize, nFileInfo.crcvalue }));
 					++nIdx;
 				}
 				else if (cmp < 0)
@@ -287,7 +292,7 @@ namespace rf_runtime
 			}
 			else if (oEnd)
 			{
-				const auto& npD = nppD[nIdx];
+				const auto& npD = nFileInfoList[nIdx];
 				snprintf(stmp, sizeof(stmp), "%s/%s", npD.spath, npD.sname);
 				diff.vNewFiles.push_back(CompareDiff::FileInfo({stmp, npD.filesize, npD.crcvalue}));
 				++nIdx;
