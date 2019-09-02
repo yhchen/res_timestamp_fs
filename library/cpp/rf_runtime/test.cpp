@@ -1,3 +1,13 @@
+#if defined(WIN32)
+#	define CRTDBG_MAP_ALLOC  
+#	include <stdlib.h>  
+#	include <crtdbg.h>  
+#	ifdef _DEBUG
+#		define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#	endif
+auto __salkdfjalsdjfkasldj = _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
+#endif // defined(WIN32)
+
 #include "rf_runtime.h"
 #include <ctime>
 
@@ -18,6 +28,5 @@ int main(const char** args, int argc)
 	const auto endTick = clock();
 	const auto totalUseTick = endTick - startTick;
 	printf("read file total use tick %d ms\n", totalUseTick);
-
 	return 0;
 }

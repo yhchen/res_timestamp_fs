@@ -5,6 +5,8 @@
 
 namespace rf_runtime
 {
+	struct RFHeaderData;
+
 	struct CompareDiff
 	{
 		struct FileInfo
@@ -27,20 +29,14 @@ namespace rf_runtime
 	public:
 		bool read_from_file(const char* file);
 		bool read_from_data(const void* data, const size_t size);
+
 		bool compare(const rf_helper& newVerHelper, /*OUT*/CompareDiff& diff) const;
 
 		struct RFFileInfo;
 	private:
-		std::vector<RFFileInfo*> _vInfos;
+		std::vector<RFFileInfo> _vInfos;
 		const char* _stringBuffers = nullptr;
-
-	private:
-		/* allocation for speed up */
-		RFFileInfo* allocFileInfo(int count, bool auto_memset = false);
-		struct alloc_list {
-			RFFileInfo* data = nullptr;
-			alloc_list *prev = nullptr;
-		} *_alloc_list;
+		RFHeaderData* _pHeader = nullptr;
 	};
 
 	typedef void(logFunc(const char*const fmt, ...));

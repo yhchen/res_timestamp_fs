@@ -11,7 +11,7 @@ namespace rf_runtime_inn_impl
 	{
 	public:
 		CAutoRelBuffer(const size_t len) { _buffer = malloc(len); }
-		~CAutoRelBuffer() { if (!_buffer) { free(_buffer); _buffer = nullptr; } }
+		~CAutoRelBuffer() { if (_buffer) { free(_buffer); _buffer = nullptr; } }
 		operator void* () { return _buffer; }
 	private:
 		void* _buffer = nullptr;

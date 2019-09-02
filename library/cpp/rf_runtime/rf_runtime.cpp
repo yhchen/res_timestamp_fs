@@ -7,6 +7,10 @@
 #	include <windows.h>
 #endif
 
+#if !defined(__max)
+#	define __max(x, y) ((x) > (y) ? (x) : (y))
+#endif //!defined(__max)
+
 namespace rf_runtime_inn_impl
 {
 	void defaultPrintfFunc(const char * const fmt, ...)
@@ -84,24 +88,18 @@ namespace rf_runtime
 	};
 
 	rf_helper::rf_helper()
-	{
-	}
+		: _pHeader(new RFHeaderData())
+	{ }
 
 	rf_helper::~rf_helper()
 	{
-		while (_alloc_list)
-		{
-			free(_alloc_list->data);
-			const auto curr_node = _alloc_list;
-			_alloc_list = _alloc_list->prev;
-			free(curr_node);
-		}
 		_vInfos.clear();
 		if (_stringBuffers)
 		{
 			free((void*)_stringBuffers);
 			_stringBuffers = nullptr;
 		}
+		delete _pHeader; _pHeader = nullptr;
 	}
 
 	bool rf_helper::read_from_file(const char* file)
@@ -120,57 +118,56 @@ namespace rf_runtime
 
 	bool rf_helper::read_from_data(const void* data, const size_t size)
 	{
-		RFHeaderData header;
-		if (size < sizeof(header))
+		if (size < sizeof(_pHeader))
 		{
 			rf_runtime_inn_impl::log("file size incorrect(header size not enought)!");
 			return false;
 		}
 		rf_runtime_inn_impl::CSampleBufferReader headerReader(data, size, 0);
-		headerReader.readBuffer(&header.IDENT, sizeof(header.IDENT));
-		if (header.IDENT.ui != FILE_IDENT.ui)
+		headerReader.readBuffer(&_pHeader->IDENT, sizeof(_pHeader->IDENT));
+		if (_pHeader->IDENT.ui != FILE_IDENT.ui)
 		{
-			rf_runtime_inn_impl::log("file ident incorrect! expcet : [%s] current : [%4s]", FILE_IDENT.s, header.IDENT.s);
+			rf_runtime_inn_impl::log("file ident incorrect! expcet : [%s] current : [%4s]", FILE_IDENT.s, _pHeader->IDENT.s);
 			return false;
 		}
 
-		headerReader.readAtom(header.littleEndian);
-		headerReader.setLittleEndian(header.littleEndian);
-		rf_runtime_inn_impl::log("Endian Mode : %s", header.littleEndian ? "Little endian" : "Big endian");
-		headerReader.readAtom(header.compressType);
-		headerReader.readBuffer(header.__reserve, sizeof(header.__reserve));
-		headerReader.readAtom((unsigned int&)header.fileVersion);
-		if (header.fileVersion != EFileVersion::VCURRENT)
+		headerReader.readAtom(_pHeader->littleEndian);
+		headerReader.setLittleEndian(_pHeader->littleEndian);
+		rf_runtime_inn_impl::log("Endian Mode : %s", _pHeader->littleEndian ? "Little endian" : "Big endian");
+		headerReader.readAtom(_pHeader->compressType);
+		headerReader.readBuffer(_pHeader->__reserve, sizeof(_pHeader->__reserve));
+		headerReader.readAtom((unsigned int&)_pHeader->fileVersion);
+		if (_pHeader->fileVersion != EFileVersion::VCURRENT)
 		{
-			rf_runtime_inn_impl::log("file version : %x not match target file version :%x", header.fileVersion, EFileVersion::VCURRENT);
+			rf_runtime_inn_impl::log("file version : %x not match target file version :%x", _pHeader->fileVersion, EFileVersion::VCURRENT);
 			return false;
 		}
 
-		headerReader.readAtom(header.originDataSize);
-		headerReader.readAtom(header.compressionDataSize);
-		headerReader.readAtom(header.stringDataSize);
-		headerReader.readAtom(header.stringDataCount);
-		headerReader.readAtom(header.fileInfoDataSize);
-		headerReader.readAtom(header.fileInfoDataCount);
+		headerReader.readAtom(_pHeader->originDataSize);
+		headerReader.readAtom(_pHeader->compressionDataSize);
+		headerReader.readAtom(_pHeader->stringDataSize);
+		headerReader.readAtom(_pHeader->stringDataCount);
+		headerReader.readAtom(_pHeader->fileInfoDataSize);
+		headerReader.readAtom(_pHeader->fileInfoDataCount);
 		headerReader.setOffset(sizeof(RFHeaderData));
 
 		const void* data_buffer = headerReader.offsetPtr();
 		unsigned int data_size = (unsigned int)headerReader.available();
 		bool need_free_buffer = false;
-		if (header.compressType != 0)
+		if (_pHeader->compressType != 0)
 		{
-			if (headerReader.available() != header.compressionDataSize)
+			if (headerReader.available() != _pHeader->compressionDataSize)
 			{
-				rf_runtime_inn_impl::log("uncompress file size not match(current : %d expect : %d).", headerReader.available(), header.originDataSize);
+				rf_runtime_inn_impl::log("uncompress file size not match(current : %d expect : %d).", headerReader.available(), _pHeader->originDataSize);
 				return false;
 			}
 			const void* decompression_buffer = headerReader.offsetPtr();
 			unsigned int decompression_size = (unsigned int)headerReader.available();
-			switch (header.compressType)
+			switch (_pHeader->compressType)
 			{
 			case EUncompressType::Zip:
 				if (!rf_runtime_impl_miniz::decompress_zip_stream(headerReader.offsetPtr(), 
-																  header.compressionDataSize, 
+																  _pHeader->compressionDataSize, 
 																  decompression_size, 
 																  &decompression_buffer, 0))
 					return false;
@@ -178,8 +175,8 @@ namespace rf_runtime
 			case EUncompressType::GZip:
 			case EUncompressType::Inflate:
 				if (!rf_runtime_impl_miniz::inflate_stream(headerReader.offsetPtr(), 
-														   header.compressionDataSize, 
-														   header.originDataSize,
+														   _pHeader->compressionDataSize, 
+														   _pHeader->originDataSize,
 														   decompression_size, 
 														   &decompression_buffer, 0))
 					return false;
@@ -189,20 +186,20 @@ namespace rf_runtime
 			need_free_buffer = true;
 		}
 
-		if (data_size != header.originDataSize)
+		if (data_size != _pHeader->originDataSize)
 		{
-			rf_runtime_inn_impl::log("file size not match(current : %d expect : %d).", data_size, header.originDataSize);
+			rf_runtime_inn_impl::log("file size not match(current : %d expect : %d).", data_size, _pHeader->originDataSize);
 			return false;
 		}
 		// read string table
-		std::vector<const char*> vStringTable(header.stringDataCount);
-		_stringBuffers = (const char*)malloc(header.stringDataSize);
-		memcpy((void*)_stringBuffers, data_buffer, header.stringDataSize);
-		auto stringReader = rf_runtime_inn_impl::CSampleBufferReader(_stringBuffers, header.stringDataSize);
-		rf_runtime_inn_impl::log("total load string count : %d			size : %d", header.stringDataCount, header.stringDataSize);
+		std::vector<const char*> vStringTable(_pHeader->stringDataCount);
+		_stringBuffers = (const char*)malloc(_pHeader->stringDataSize);
+		memcpy((void*)_stringBuffers, data_buffer, _pHeader->stringDataSize);
+		auto stringReader = rf_runtime_inn_impl::CSampleBufferReader(_stringBuffers, _pHeader->stringDataSize);
+		rf_runtime_inn_impl::log("total load string count : %d			size : %d", _pHeader->stringDataCount, _pHeader->stringDataSize);
 		const char** stringData = vStringTable.data();
 		{
-			for (unsigned int i = 0; i < header.stringDataCount; ++i)
+			for (unsigned int i = 0; i < _pHeader->stringDataCount; ++i)
 			{
 				const char* p = stringReader.readStrLT255();
 				if (p == nullptr)
@@ -214,25 +211,23 @@ namespace rf_runtime
 			}
 		}
 		// read file info
-		rf_runtime_inn_impl::CSampleBufferReader dataReader(data_buffer, header.fileInfoDataSize, header.stringDataSize, header.littleEndian);
-		if (dataReader.available() < header.fileInfoDataSize)
+		rf_runtime_inn_impl::CSampleBufferReader dataReader(data_buffer, _pHeader->fileInfoDataSize, _pHeader->stringDataSize, _pHeader->littleEndian);
+		if (dataReader.available() < _pHeader->fileInfoDataSize)
 		{
-			rf_runtime_inn_impl::log("file data size not match(current : %d expect : %d).", dataReader.available(), header.fileInfoDataSize);
+			rf_runtime_inn_impl::log("file data size not match(current : %d expect : %d).", dataReader.available(), _pHeader->fileInfoDataSize);
 			return false;
 		}
-		rf_runtime_inn_impl::log("total load file info count : %d			size : %d", header.fileInfoDataCount, header.fileInfoDataSize);
+		rf_runtime_inn_impl::log("total load file info count : %d			size : %d", _pHeader->fileInfoDataCount, _pHeader->fileInfoDataSize);
 		{
-			RFFileInfo* infoLst = allocFileInfo(header.fileInfoDataCount);
-			_vInfos.resize(header.fileInfoDataCount);
-			const RFFileInfo** fileData = (const RFFileInfo**)_vInfos.data();
-			for (unsigned int i = 0; i < header.fileInfoDataCount; ++i)
+			_vInfos.reserve(_pHeader->fileInfoDataCount);
+			RFFileInfo* infoLst = (RFFileInfo*)_vInfos.data();
+			for (unsigned int i = 0; i < _pHeader->fileInfoDataCount; ++i)
 			{
 				auto* pData = &infoLst[i];
 				unsigned short nPathIdx = 0, nNameIdx = 0;
 				dataReader.readAtom(nPathIdx).readAtom(nNameIdx).readAtom(pData->crcvalue).readAtom(pData->filesize);
 				pData->spath = stringData[nPathIdx];
 				pData->sname = stringData[nNameIdx];
-				fileData[i] = pData;
 			}
 		}
 		if (need_free_buffer)
@@ -267,22 +262,22 @@ namespace rf_runtime
 		{
 			if (!oEnd && !nEnd)
 			{
-				const auto* opD = oppD[oIdx];
-				const auto* npD = nppD[nIdx];
-				const auto cmp = rf_runtime_inn_impl::compareFilePath(opD->spath, npD->spath, opD->sname, npD->sname);
+				const auto& opD = oppD[oIdx];
+				const auto& npD = nppD[nIdx];
+				const auto cmp = rf_runtime_inn_impl::compareFilePath(opD.spath, npD.spath, opD.sname, npD.sname);
 				if (cmp == 0)
 				{
-					if (opD->crcvalue != npD->crcvalue || opD->filesize != npD->filesize)
+					if (opD.crcvalue != npD.crcvalue || opD.filesize != npD.filesize)
 					{
-						snprintf(stmp, sizeof(stmp), "%s/%s", npD->spath, npD->sname);
-						diff.vChangedFiles.push_back(CompareDiff::FileInfo({ stmp, npD->filesize, npD->crcvalue }));
+						snprintf(stmp, sizeof(stmp), "%s/%s", npD.spath, npD.sname);
+						diff.vChangedFiles.push_back(CompareDiff::FileInfo({ stmp, npD.filesize, npD.crcvalue }));
 					}
 					++oIdx; ++nIdx;
 				}
 				else if (cmp > 0)
 				{
-					snprintf(stmp, sizeof(stmp), "%s/%s", npD->spath, npD->sname);
-					diff.vNewFiles.push_back(CompareDiff::FileInfo({ stmp, npD->filesize, npD->crcvalue }));
+					snprintf(stmp, sizeof(stmp), "%s/%s", npD.spath, npD.sname);
+					diff.vNewFiles.push_back(CompareDiff::FileInfo({ stmp, npD.filesize, npD.crcvalue }));
 					++nIdx;
 				}
 				else if (cmp < 0)
@@ -292,9 +287,9 @@ namespace rf_runtime
 			}
 			else if (oEnd)
 			{
-				const auto* npD = nppD[nIdx];
-				snprintf(stmp, sizeof(stmp), "%s/%s", npD->spath, npD->sname);
-				diff.vNewFiles.push_back(CompareDiff::FileInfo({stmp, npD->filesize, npD->crcvalue}));
+				const auto& npD = nppD[nIdx];
+				snprintf(stmp, sizeof(stmp), "%s/%s", npD.spath, npD.sname);
+				diff.vNewFiles.push_back(CompareDiff::FileInfo({stmp, npD.filesize, npD.crcvalue}));
 				++nIdx;
 			}
 			else
@@ -307,27 +302,6 @@ namespace rf_runtime
 
 		return true;
 	}
-
-	rf_helper::RFFileInfo* rf_helper::allocFileInfo(int count, bool auto_memset/* = false*/)
-	{
-		const size_t mem_size = sizeof(RFFileInfo) * count;
-		RFFileInfo* infoLst = (RFFileInfo*)malloc(mem_size);
-		auto new_node = (alloc_list*)malloc(sizeof(alloc_list));
-		if (_alloc_list == nullptr)
-		{
-			_alloc_list = new_node;
-			new_node->prev = nullptr;
-		}
-		else
-		{
-			new_node->prev = _alloc_list;
-			_alloc_list = new_node;
-		}
-		new_node->data = infoLst;
-		if (auto_memset) memset(infoLst, 0, mem_size);
-		return infoLst;
-	}
-
 
 	void setDefaultLogFunc(logFunc *funcPtr) {
 		if (funcPtr) {

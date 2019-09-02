@@ -37,12 +37,13 @@ class CStringTable {
         let idx = this._stringMap.get(s);
         if (idx != undefined)
             return idx;
-        idx = this._stringTable.length;
+        idx = this.stringTableIdx;
         this._stringMap.set(s, idx);
         this._stringTable.push(s);
         return idx;
     }
     get stringTable() { return this._stringTable; }
+    get stringTableIdx() { return this.stringTable.length; }
 }
 class CFMSFData {
     constructor() {

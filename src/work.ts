@@ -33,12 +33,13 @@ class CStringTable {
 		if (s.length >= 256) throw `file relative path or file name lenght must less than 256`;
 		let idx = this._stringMap.get(s);
 		if (idx != undefined) return idx;
-		idx = this._stringTable.length;
+		idx = this.stringTableIdx;
 		this._stringMap.set(s, idx);
 		this._stringTable.push(s);
 		return idx;
 	}
 	public get stringTable() : Readonly<Array<string>> { return this._stringTable; }
+	public get stringTableIdx() : number { return this.stringTable.length; }
 
 	private readonly _stringTable = new Array<string>();
 	private readonly _stringMap = new Map<string, number>();
