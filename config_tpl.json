@@ -12,7 +12,8 @@
 			"path": "./test/files",
 			"relative": "./test/files/",
 			"filters": [
-				"**/*"
+				"**/*",
+				"!src/**/*.luac"
 			]
 		}
 	]

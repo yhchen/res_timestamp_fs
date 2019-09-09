@@ -43,8 +43,10 @@ Usage: node ./index.js [options]
         {
             "path": "./test/files",
             "relative": "./test/files/",
+            "filters help -" : "**/* for all file and sub folder. add '!' at the begin of line for ignore the specified group.",
             "filters": [
-                "**/*"
+                "**/*",
+                "!/src/**/*.luac"
             ]
         }
     ],
