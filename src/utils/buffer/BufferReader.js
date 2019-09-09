@@ -56,6 +56,6 @@ class BufferReader {
         return 0;
     }
 }
-BufferReader.__zero_data_view = new DataView(new ArrayBuffer(0));
 exports.BufferReader = BufferReader;
+BufferReader.__zero_data_view = new DataView(new ArrayBuffer(0));
 //# sourceMappingURL=BufferReader.js.map

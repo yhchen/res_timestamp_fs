@@ -40,7 +40,8 @@ function findMatchFiles(filterSList, dir, outFileLst) {
                 if (!isDir)
                     outFileLst.push(spath);
                 break;
-            case 2 /* nmatch */: break;
+            case 2 /* nmatch */:
+                break;
         }
         return;
     }, true);

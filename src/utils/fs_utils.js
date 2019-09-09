@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -15,7 +16,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs = __importStar(require("fs"));
+const fs = __importStar(require("fs-extra"));
 const os = __importStar(require("os"));
 const path = __importStar(require("path"));
 /**
@@ -77,9 +78,9 @@ exports.foreachFolder = foreachFolder;
 /**
  * get file full extension
  * example :
- *     /1.pvr.ccz => .pvr.ccz
- *     /path/34kjdfdfjdf.txt.zip => .txt.zip
- *     /my_path/file_no_ext => `[empty string]`
+ *	 /1.pvr.ccz => .pvr.ccz
+ *	 /path/34kjdfdfjdf.txt.zip => .txt.zip
+ *	 /my_path/file_no_ext => `[empty string]`
  * @param filename file path
  * @param includeDot include `.` default is `true`
  */
@@ -102,9 +103,9 @@ exports.getFileExtName = getFileExtName;
 /**
  * get file name without extension
  * example :
- *     /1.pvr.ccz => .pvr.ccz
- *     /path/34kjdfdfjdf.txt.zip => 34kjdfdfjdf
- *     /my_path/file_no_ext => file_no_ext
+ *	 /1.pvr.ccz => .pvr.ccz
+ *	 /path/34kjdfdfjdf.txt.zip => 34kjdfdfjdf
+ *	 /my_path/file_no_ext => file_no_ext
  * @param filename file path
  */
 function getFileWithoutExtName(filename) {

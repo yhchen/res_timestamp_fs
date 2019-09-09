@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -15,7 +16,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs = __importStar(require("fs"));
+const fs = __importStar(require("fs-extra"));
 const path = __importStar(require("path"));
 const crc32 = __importStar(require("buffer-crc32"));
 const match_utils = __importStar(require("./utils/match_utils"));
@@ -56,7 +57,7 @@ function execute(config, outfile) {
         const startTick = Date.now();
         const fileInfoLst = new Array();
         console.log(`generate file list...`);
-        if (!makeFileInfoList(config, fileInfoLst)) {
+        if (!(yield makeFileInfoList(config, fileInfoLst))) {
             throw `INNER ERROR : make file info List failure!`;
         }
         console.log(`generate fmt datas...`);
@@ -82,25 +83,39 @@ function execute(config, outfile) {
 }
 exports.execute = execute;
 function makeFileInfoList(config, fileInfoLst) {
-    const fileRelativeMap = new Map();
-    for (const filter of config.list) {
-        const fl = new Array();
-        match_utils.findMatchFiles(filter.filters, filter.path, fl);
-        for (const p of fl) {
-            const buff = fs.readFileSync(p);
-            const fi = { path: p,
-                relative_path: path.relative(filter.relative, p).replace(/\\/g, '/'),
-                crc: crc32.unsigned(buff),
-                size: buff.byteLength };
-            if (fileRelativeMap.has(fi.relative_path)) {
-                throw `duplicate relative path [${fi.relative_path}] at [${fileRelativeMap.get(fi.relative_path)}] and [${fi.path}]`;
+    return __awaiter(this, void 0, void 0, function* () {
+        const Monitor = new comm_utils_js_1.AsyncWorkMonitor();
+        const fileRelativeMap = new Map();
+        for (const filter of config.list) {
+            const fl = new Array();
+            match_utils.findMatchFiles(filter.filters, filter.path, fl);
+            for (const p of fl) {
+                Monitor.addWork();
+                makeFileInfo(p, filter.relative, fileInfoLst, fileRelativeMap, Monitor);
             }
-            fileInfoLst.push(fi);
-            fileRelativeMap.set(fi.relative_path, fi.path);
         }
-    }
-    console.log(`total found file : ${fileInfoLst.length}`);
-    return true;
+        yield Monitor.WaitAllWorkDone();
+        console.log(`total found file : ${fileInfoLst.length}`);
+        return true;
+    });
+}
+function makeFileInfo(spath, relative_path, fileInfoLst, fileRelativeMap, monitor) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const buff = yield fs.readFile(spath);
+        const fi = {
+            path: spath,
+            relative_path: path.relative(relative_path, spath).replace(/\\/g, '/'),
+            crc: crc32.unsigned(buff),
+            size: buff.byteLength
+        };
+        if (fileRelativeMap.has(fi.relative_path)) {
+            throw `duplicate relative path [${fi.relative_path}] at [${fileRelativeMap.get(fi.relative_path)}] and [${fi.path}]`;
+        }
+        fileInfoLst.push(fi);
+        fileRelativeMap.set(fi.relative_path, fi.path);
+        monitor.decWork();
+        return fi;
+    });
 }
 function makeFMTData(config, fileInfoLst) {
     const fmtData = new CFMSFData();
@@ -109,12 +124,14 @@ function makeFMTData(config, fileInfoLst) {
         const filepath = fi.relative_path.substr(0, separator);
         const filename = fi.relative_path.substr(separator + 1);
         const realfile_name = config.strip_file_extension ? fs_utils.getFileWithoutExtName(filename) : filename;
-        fmtData.files.push({ spath: filepath,
+        fmtData.files.push({
+            spath: filepath,
             sname: realfile_name,
             path_idx: 0,
             name_idx: 0,
             crc: fi.crc,
-            size: fi.size });
+            size: fi.size
+        });
     }
     // sort string
     const cmp = (a, b) => {

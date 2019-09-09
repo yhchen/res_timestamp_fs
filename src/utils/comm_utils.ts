@@ -24,3 +24,26 @@ export function compareStr(a: string, b: string): number {
 	}
 	return 0;
 }
+
+export class AsyncWorkMonitor {
+	public addWork(cnt: number = 1) {
+		this._leftCnt += cnt;
+	}
+	public decWork(cnt: number = 1) {
+		this._leftCnt -= cnt;
+	}
+	public async WaitAllWorkDone(): Promise<boolean> {
+		if (this._leftCnt <= 0)
+			return true;
+		while (true) {
+			if (this._leftCnt <= 0) {
+				return true;
+			}
+			await this.delay()
+		}
+	}
+	public async delay(ms: number = 0) {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+	private _leftCnt = 0;
+}

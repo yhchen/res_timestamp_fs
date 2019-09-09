@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as crc32 from 'buffer-crc32';
 import * as config_tpl from '../config_tpl.json';
@@ -6,7 +6,7 @@ import * as match_utils from './utils/match_utils';
 import { BufferWriter } from './utils/buffer/BufferWriter'
 import * as zlib_utils from './utils/zlib_utils';
 import * as fs_utils from './utils/fs_utils';
-import { compareStr } from './utils/comm_utils.js';
+import { compareStr, AsyncWorkMonitor } from './utils/comm_utils.js';
 
 type FileInfo = {
 	path: string;
@@ -54,7 +54,7 @@ export async function execute(config: typeof config_tpl, outfile: string): Promi
 	const startTick = Date.now();
 	const fileInfoLst = new Array<FileInfo>();
 	console.log(`generate file list...`);
-	if (!makeFileInfoList(config, fileInfoLst)) {
+	if (!await makeFileInfoList(config, fileInfoLst)) {
 		throw `INNER ERROR : make file info List failure!`;
 	}
 	console.log(`generate fmt datas...`);
@@ -79,28 +79,37 @@ export async function execute(config: typeof config_tpl, outfile: string): Promi
 	return 0;
 }
 
-function makeFileInfoList(config: typeof config_tpl, fileInfoLst: Array<FileInfo>): boolean {
+async function makeFileInfoList(config: typeof config_tpl, fileInfoLst: Array<FileInfo>): Promise<boolean> {
+	const Monitor = new AsyncWorkMonitor();
 	const fileRelativeMap = new Map<string, string>();
 	for (const filter of config.list) {
 		const fl = new Array<string>();
 		match_utils.findMatchFiles(filter.filters, filter.path, fl);
 		for (const p of fl) {
-			const buff = fs.readFileSync(p);
-			const fi: FileInfo = {
-				path: p,
-				relative_path: path.relative(filter.relative, p).replace(/\\/g, '/'),
-				crc: crc32.unsigned(buff),
-				size: buff.byteLength
-			};
-			if (fileRelativeMap.has(fi.relative_path)) {
-				throw `duplicate relative path [${fi.relative_path}] at [${fileRelativeMap.get(fi.relative_path)}] and [${fi.path}]`;
-			}
-			fileInfoLst.push(fi);
-			fileRelativeMap.set(fi.relative_path, fi.path);
+			Monitor.addWork();
+			makeFileInfo(p, filter.relative, fileInfoLst, fileRelativeMap, Monitor);
 		}
 	}
+	await Monitor.WaitAllWorkDone();
 	console.log(`total found file : ${fileInfoLst.length}`);
 	return true;
+}
+
+async function makeFileInfo(spath: string, relative_path: string, fileInfoLst: Array<FileInfo>, fileRelativeMap: Map<string, string>, monitor: AsyncWorkMonitor): Promise<FileInfo> {
+	const buff = await fs.readFile(spath);
+	const fi: FileInfo = {
+		path: spath,
+		relative_path: path.relative(relative_path, spath).replace(/\\/g, '/'),
+		crc: crc32.unsigned(buff),
+		size: buff.byteLength
+	};
+	if (fileRelativeMap.has(fi.relative_path)) {
+		throw `duplicate relative path [${fi.relative_path}] at [${fileRelativeMap.get(fi.relative_path)}] and [${fi.path}]`;
+	}
+	fileInfoLst.push(fi);
+	fileRelativeMap.set(fi.relative_path, fi.path);
+	monitor.decWork();
+	return fi;
 }
 
 function makeFMTData(config: typeof config_tpl, fileInfoLst: Array<FileInfo>): CFMSFData | undefined {
