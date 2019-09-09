@@ -36,19 +36,19 @@ function random_files(dir: string, file_count: number, folder_count: number): bo
 		}
 		const file = path.join(folder, name + '.txt');
 		file_list.push(file);
-		fs.writeFileSync(file, Buffer.alloc(1024 * 1024 * 0.5 * Math.random()), {flag:'w+'});
+		fs.writeFileSync(file, Buffer.alloc(1024 * 1024 * 0.5 * Math.random()), { flag: 'w+' });
 	}
 	return true;
 }
 
-const NameMap = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y','z', '0', '1', '2','3','4','5','6','7','8','9'];
+const NameMap = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-function randomName(maxLen?:number) : string {
+function randomName(maxLen?: number): string {
 	if (maxLen == undefined) maxLen = 4;
 	const len = Math.round(Math.random() * maxLen) + 4;
 	let s = '';
 	for (let i = 0; i < len; ++i) {
-		s += NameMap[Math.round(Math.random() * (NameMap.length-1))];
+		s += NameMap[Math.round(Math.random() * (NameMap.length - 1))];
 	}
 	return s;
 }

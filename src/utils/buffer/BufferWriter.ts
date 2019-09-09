@@ -1,8 +1,7 @@
 "use strict";
 
 // 二进制数据读取类
-export class BufferWriter
-{
+export class BufferWriter {
 	constructor(initSize: number = 8/*init buffer size*/, appendSize: number = 32/*buffer append size*/) {
 		this._buffer_expand_size = appendSize;
 		this._uint8arry = new Uint8Array(initSize);
@@ -22,7 +21,7 @@ export class BufferWriter
 	public get buffer(): Uint8Array { return new Uint8Array(this._uint8arry.buffer, 0, this._pos); }
 	// get DataView
 	public get dataView(): DataView { return this._dataview; }
-	
+
 	public writeInt8(value: number): void { this._writeNumber(value, 1, this._dataview.setInt8); }
 	public writeUint8(value: number): void { this._writeNumber(value, 1, this._dataview.setUint8); }
 	public writeInt16(value: number): void { this._writeNumber(value, 2, this._dataview.setInt16); }
@@ -31,7 +30,7 @@ export class BufferWriter
 	public writeFloat64(value: number): void { this._writeNumber(value, 8, this._dataview.setFloat64); }
 	public writeInt32(value: number): void { this._writeNumber(value, 4, this._dataview.setInt32); }
 	public writeUint32(value: number): void { this._writeNumber(value, 4, this._dataview.setUint32); }
-	public writeBuffer(buffer: Uint8Array|ArrayBuffer, offset?: number, length?: number): void {
+	public writeBuffer(buffer: Uint8Array | ArrayBuffer, offset?: number, length?: number): void {
 		const wbuffer: Uint8Array = new Uint8Array((buffer instanceof Uint8Array) ? buffer : buffer, offset || 0, length);
 		const wlength = wbuffer.byteLength;
 		this._validateBuffer(wlength)

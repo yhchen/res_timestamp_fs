@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as crc32 from 'buffer-crc32';
 import * as config_tpl from '../config_tpl.json';
 import * as match_utils from './utils/match_utils';
-import {BufferWriter} from './utils/buffer/BufferWriter'
+import { BufferWriter } from './utils/buffer/BufferWriter'
 import * as zlib_utils from './utils/zlib_utils';
 import * as fs_utils from './utils/fs_utils';
 import { compareStr } from './utils/comm_utils.js';
@@ -16,12 +16,12 @@ type FileInfo = {
 };
 
 type FMSFileInfo = {
-	spath : string;
-	sname : string;
-	path_idx : number;
-	name_idx : number;
-	crc : number;
-	size : number;
+	spath: string;
+	sname: string;
+	path_idx: number;
+	name_idx: number;
+	crc: number;
+	size: number;
 };
 
 // header version
@@ -38,8 +38,8 @@ class CStringTable {
 		this._stringTable.push(s);
 		return idx;
 	}
-	public get stringTable() : Readonly<Array<string>> { return this._stringTable; }
-	public get stringTableIdx() : number { return this.stringTable.length; }
+	public get stringTable(): Readonly<Array<string>> { return this._stringTable; }
+	public get stringTableIdx(): number { return this.stringTable.length; }
 
 	private readonly _stringTable = new Array<string>();
 	private readonly _stringMap = new Map<string, number>();
@@ -79,17 +79,19 @@ export async function execute(config: typeof config_tpl, outfile: string): Promi
 	return 0;
 }
 
-function makeFileInfoList(config: typeof config_tpl, fileInfoLst: Array<FileInfo>) : boolean {
+function makeFileInfoList(config: typeof config_tpl, fileInfoLst: Array<FileInfo>): boolean {
 	const fileRelativeMap = new Map<string, string>();
 	for (const filter of config.list) {
 		const fl = new Array<string>();
 		match_utils.findMatchFiles(filter.filters, filter.path, fl);
 		for (const p of fl) {
 			const buff = fs.readFileSync(p);
-			const fi: FileInfo = {path			:p, 
-								  relative_path	:path.relative(filter.relative, p).replace(/\\/g, '/'),
-								  crc:			crc32.unsigned(buff),
-								  size:			buff.byteLength};
+			const fi: FileInfo = {
+				path: p,
+				relative_path: path.relative(filter.relative, p).replace(/\\/g, '/'),
+				crc: crc32.unsigned(buff),
+				size: buff.byteLength
+			};
 			if (fileRelativeMap.has(fi.relative_path)) {
 				throw `duplicate relative path [${fi.relative_path}] at [${fileRelativeMap.get(fi.relative_path)}] and [${fi.path}]`;
 			}
@@ -101,22 +103,24 @@ function makeFileInfoList(config: typeof config_tpl, fileInfoLst: Array<FileInfo
 	return true;
 }
 
-function makeFMTData(config: typeof config_tpl, fileInfoLst: Array<FileInfo>): CFMSFData|undefined {
+function makeFMTData(config: typeof config_tpl, fileInfoLst: Array<FileInfo>): CFMSFData | undefined {
 	const fmtData = new CFMSFData();
 	for (const fi of fileInfoLst) {
 		const separator = fi.relative_path.lastIndexOf('/');
 		const filepath = fi.relative_path.substr(0, separator);
-		const filename = fi.relative_path.substr(separator+1);
+		const filename = fi.relative_path.substr(separator + 1);
 		const realfile_name = config.strip_file_extension ? fs_utils.getFileWithoutExtName(filename) : filename;
-		fmtData.files.push({spath		: filepath,
-							sname		: realfile_name,
-							path_idx	: 0,
-							name_idx	: 0,
-							crc			: fi.crc,
-							size		: fi.size});
+		fmtData.files.push({
+			spath: filepath,
+			sname: realfile_name,
+			path_idx: 0,
+			name_idx: 0,
+			crc: fi.crc,
+			size: fi.size
+		});
 	}
 	// sort string
-	const cmp = (a: FMSFileInfo, b: FMSFileInfo)=>{
+	const cmp = (a: FMSFileInfo, b: FMSFileInfo) => {
 		const pcmd = compareStr(a.spath, b.spath);
 		if (pcmd != 0) return pcmd;
 		return compareStr(a.sname, b.sname);
@@ -131,14 +135,14 @@ function makeFMTData(config: typeof config_tpl, fileInfoLst: Array<FileInfo>): C
 	return fmtData;
 }
 
-async function makeBuffer(config: typeof config_tpl, fmtData : CFMSFData) : Promise<Uint8Array> {
-	const useCompression = config.compress && config.compress.type 
-							&& config.compress.type > zlib_utils.ECompressType.NoComp 
-							&& config.compress.type < zlib_utils.ECompressType.Max
-							&& config.compress.level > 0 && config.compress.level < 10;
+async function makeBuffer(config: typeof config_tpl, fmtData: CFMSFData): Promise<Uint8Array> {
+	const useCompression = config.compress && config.compress.type
+		&& config.compress.type > zlib_utils.ECompressType.NoComp
+		&& config.compress.type < zlib_utils.ECompressType.Max
+		&& config.compress.level > 0 && config.compress.level < 10;
 
 	const littleEndian = config.endian == 'LE';
-	console.log(`compression mode : ${useCompression?zlib_utils.ECompressType[config.compress.type] + " level : " + (config.compress.level || "default (6)"):"No Compression"}`);
+	console.log(`compression mode : ${useCompression ? zlib_utils.ECompressType[config.compress.type] + " level : " + (config.compress.level || "default (6)") : "No Compression"}`);
 
 	// calc buff size
 	const HeaderSize = 64; // header size

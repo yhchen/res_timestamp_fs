@@ -1,9 +1,8 @@
 "use strict";
 
 // 二进制数据读取类
-export class BufferReader
-{
-	constructor(buffer: ArrayBuffer|Uint8Array, byteOffset?: number, byteLength?: number) {
+export class BufferReader {
+	constructor(buffer: ArrayBuffer | Uint8Array, byteOffset?: number, byteLength?: number) {
 		if (buffer) {
 			let arrybuf: ArrayBuffer = (buffer instanceof Uint8Array) ? buffer.buffer : buffer;
 			this._dataview = new DataView(arrybuf, byteOffset, byteLength);
@@ -22,7 +21,7 @@ export class BufferReader
 	public get bufferPosition(): number { return this._pos + this._dataview.byteOffset; }
 	// get DataView
 	public get dataView(): DataView { return this._dataview; }
-	
+
 	public getInt8(): number { return this._getNumber(1, this._dataview.getInt8); }
 	public getUint8(): number { return this._getNumber(1, this._dataview.getUint8); }
 	public getInt16(): number { return this._getNumber(2, this._dataview.getInt16); }
@@ -37,7 +36,7 @@ export class BufferReader
 		} else {
 			const start_pos = this._dataview.byteOffset + this._pos;
 			if (this._dataview.byteOffset)
-			this._pos += buffSize;
+				this._pos += buffSize;
 			return this._dataview.buffer.slice(start_pos, start_pos + buffSize);
 		}
 		return new ArrayBuffer(0);

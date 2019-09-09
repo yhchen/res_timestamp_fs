@@ -16,42 +16,42 @@ export enum ECompressType {
 export async function compressStream(src: zlib.InputType, type: ECompressType, options?: zlib.ZlibOptions): Promise<Buffer> {
 	switch (type) {
 		case ECompressType.GZip:
-		{
-			// return zlib.gzipSync(src, options); // gzip temporary not support(use deflate instand)
-			return zlib.deflateSync(src, options);
-		}
-		case ECompressType.Flate:
-		{
-			return zlib.deflateSync(src, options);
-		}
-		case ECompressType.Zip:
-		{
-			if (src instanceof Buffer) {
-				return await zipWithStream(src, options?options.level:undefined);
-			} else if (src instanceof ArrayBuffer || src instanceof Uint8Array
-					|| src instanceof Uint8ClampedArray || src instanceof Uint16Array 
-					|| src instanceof Uint32Array || src instanceof Int8Array 
-					|| src instanceof Int16Array || src instanceof Int32Array 
-					|| src instanceof Float32Array || src instanceof Float64Array) {
-				return await zipWithStream(new Buffer(src), options?options.level:undefined);
+			{
+				// return zlib.gzipSync(src, options); // gzip temporary not support(use deflate instand)
+				return zlib.deflateSync(src, options);
 			}
-		}
+		case ECompressType.Flate:
+			{
+				return zlib.deflateSync(src, options);
+			}
+		case ECompressType.Zip:
+			{
+				if (src instanceof Buffer) {
+					return await zipWithStream(src, options ? options.level : undefined);
+				} else if (src instanceof ArrayBuffer || src instanceof Uint8Array
+					|| src instanceof Uint8ClampedArray || src instanceof Uint16Array
+					|| src instanceof Uint32Array || src instanceof Int8Array
+					|| src instanceof Int16Array || src instanceof Int32Array
+					|| src instanceof Float32Array || src instanceof Float64Array) {
+					return await zipWithStream(new Buffer(src), options ? options.level : undefined);
+				}
+			}
 	}
 	return Promise.reject(`type ${typeof src} not supported!`);
 }
 
-const DefaultZipConfig: archiver.ArchiverOptions = {store:true,zlib: { level: 0 }};
+const DefaultZipConfig: archiver.ArchiverOptions = { store: true, zlib: { level: 0 } };
 
 export function doZipWithFolder(src: string, dest: string, options?: archiver.ArchiverOptions) {
-    if (!options) {
-        options = DefaultZipConfig;
-    }
+	if (!options) {
+		options = DefaultZipConfig;
+	}
 	let output = fs.createWriteStream(dest);
 	let zip = archiver.create('zip', options);
-	zip.on('finish', ()=>{
+	zip.on('finish', () => {
 		console.info(`* compress zip [${dest}] complete success!`);
 	});
-	zip.on('error', function(err) {
+	zip.on('error', function (err) {
 		console.error(`* compress zip [${dest}] failure!`);
 		throw err;
 	});
@@ -63,20 +63,20 @@ export function doZipWithFolder(src: string, dest: string, options?: archiver.Ar
 
 export function doZipWithFileList(fileLst: string[], resDir: string, dest: string) {
 	let output = fs.createWriteStream(dest);
-	let zip = archiver.create('zip',{store:true,zlib: { level: 0 }});
+	let zip = archiver.create('zip', { store: true, zlib: { level: 0 } });
 	zip.pipe(output);
 	for (const file of fileLst) {
-		zip.append(path.join(resDir, file), {name:file});
+		zip.append(path.join(resDir, file), { name: file });
 	}
-    zip.finalize();
-    zip.on('finish', ()=>{
-        console.info(`* compress zip [${dest}] complete success!`);
-    });
-    zip.on('error', (errorMsg)=>{
+	zip.finalize();
+	zip.on('finish', () => {
+		console.info(`* compress zip [${dest}] complete success!`);
+	});
+	zip.on('error', (errorMsg) => {
 		console.error(`* compress zip [${dest}] failure!`);
-        console.error(errorMsg.message);
+		console.error(errorMsg.message);
 		throw errorMsg;
-    });
+	});
 	console.info(`start compress zip [${dest}]...`);
 }
 
@@ -92,15 +92,15 @@ export async function zipWithStream(buffer: Buffer, level: number = 6, entryName
 	const tmpdir = await fs_utils.makeTempDirectory();
 	const tmpfile = path.join(tmpdir, Date.now().toString() + '.zip');
 	let output = fs.createWriteStream(tmpfile);
-	let zip = archiver.create('zip', {zlib:{level}, store:storeMode});
+	let zip = archiver.create('zip', { zlib: { level }, store: storeMode });
 	zip.pipe(output);
-	zip.append(buffer, {name : entryName});
+	zip.append(buffer, { name: entryName });
 	zip.finalize();
-	return new Promise((resolve, reject)=>{
-		zip.on('finish', ()=>{
+	return new Promise((resolve, reject) => {
+		zip.on('finish', () => {
 			setTimeout(() => { // delay handle due to date incomplete
 				console.info(`* compress zip stream complete success!`);
-				const compression_buffer = fs.readFileSync(output.path, {encoding:null});
+				const compression_buffer = fs.readFileSync(output.path, { encoding: null });
 				console.info(`* origin size : ${buffer.byteLength}    compress size : ${compression_buffer.byteLength}      precent : ${Math.round(compression_buffer.byteLength / buffer.byteLength * 10000) / 100}%`);
 				resolve(compression_buffer);
 

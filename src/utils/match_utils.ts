@@ -4,9 +4,9 @@ import * as micromatch from 'micromatch';
 import * as fs_utils from './fs_utils'
 
 class MatchFilter {
-    public includes = new Array<string>(); // include list
-    public excludes = new Array<string>(); // exclude list
-    public includeAll = false; // include all files
+	public includes = new Array<string>(); // include list
+	public excludes = new Array<string>(); // exclude list
+	public includeAll = false; // include all files
 }
 
 
@@ -17,24 +17,29 @@ class MatchFilter {
  * @param outFileLst out put all the file list
  */
 export function findMatchFiles(filterSList: string[], dir: string, outFileLst: Array<string>): boolean {
-    const mf = genMatchFilter(filterSList, dir);
-    if (!mf) {
-        console.error('ERROR : generate file list filter failure!');
-        return false;
-    }
-    fs_utils.foreachFolder(dir, (spath, isDir) => {
-        switch (checkPathMatchFilter(path.relative(dir, spath), mf)) {
-            case EMathType.exclude:     if (isDir) return fs_utils.EFFolderBreakType.BreakFolder; break;
-            case EMathType.match:       if (!isDir) outFileLst.push(spath); break;
-            case EMathType.nmatch:      break;
-        }
-        return;
-    }, true);
-    return true;
+	const mf = genMatchFilter(filterSList, dir);
+	if (!mf) {
+		console.error('ERROR : generate file list filter failure!');
+		return false;
+	}
+	fs_utils.foreachFolder(dir, (spath, isDir) => {
+		switch (checkPathMatchFilter(path.relative(dir, spath), mf)) {
+			case EMathType.exclude:
+				if (isDir) return fs_utils.EFFolderBreakType.BreakFolder;
+				break;
+			case EMathType.match:
+				if (!isDir) outFileLst.push(spath);
+				break;
+			case EMathType.nmatch:
+				break;
+		}
+		return;
+	}, true);
+	return true;
 }
 
 function customIsAbsolutePath(s: string): boolean {
-    return s.length >= 2 && (s[0] == '/' || s[1] == ':');
+	return s.length >= 2 && (s[0] == '/' || s[1] == ':');
 }
 
 
@@ -44,43 +49,43 @@ function customIsAbsolutePath(s: string): boolean {
  * @param searchPath (optional)
  */
 function genMatchFilter(filterSList: string[], searchPath?: string): MatchFilter {
-    const result:MatchFilter = new MatchFilter();
-    for (let p of filterSList) {
-        let excludeFlag = false;
-        if (p && p.length > 1 && p[0] == '!') {
-            excludeFlag = true;
-            p = p.substr(1);
-        }
-        if (searchPath) {
-            const sPath = customIsAbsolutePath(p) ? p : path.join(searchPath, p);
-            const state = fs.existsSync(sPath) ? fs.statSync(sPath) : undefined;
-            if (state && state.isDirectory()) {
-                p += '/**/*';
-            }
-        }
-        p = p.replace(/\\/g, '/').replace(/\/\//g, '/');
-        if (excludeFlag) {
-            result.excludes.push(p);
-        } else {
-            if (p == "**/*") {
-                result.includeAll = true;
-            }
-            result.includes.push(p);
-        }
-    }
+	const result: MatchFilter = new MatchFilter();
+	for (let p of filterSList) {
+		let excludeFlag = false;
+		if (p && p.length > 1 && p[0] == '!') {
+			excludeFlag = true;
+			p = p.substr(1);
+		}
+		if (searchPath) {
+			const sPath = customIsAbsolutePath(p) ? p : path.join(searchPath, p);
+			const state = fs.existsSync(sPath) ? fs.statSync(sPath) : undefined;
+			if (state && state.isDirectory()) {
+				p += '/**/*';
+			}
+		}
+		p = p.replace(/\\/g, '/').replace(/\/\//g, '/');
+		if (excludeFlag) {
+			result.excludes.push(p);
+		} else {
+			if (p == "**/*") {
+				result.includeAll = true;
+			}
+			result.includes.push(p);
+		}
+	}
 
-    // no filter will auto insert all files
-    // if (result.includes.length <= 0) {
-    //     result.includeAll = true;
-    // }
+	// no filter will auto insert all files
+	// if (result.includes.length <= 0) {
+	//     result.includeAll = true;
+	// }
 
-    return result;
+	return result;
 }
 
 const enum EMathType {
-    match = 1, // match
-    nmatch = 2, // not match
-    exclude = 3, // exclude from search list
+	match = 1, // match
+	nmatch = 2, // not match
+	exclude = 3, // exclude from search list
 }
 
 /**
@@ -89,11 +94,11 @@ const enum EMathType {
  * @param filter filter
  */
 function checkPathMatchFilter(spath: string, filter: MatchFilter): EMathType {
-    if (micromatch.any(spath.replace(/\\/g, '/'), filter.excludes)) {
-        return EMathType.exclude;
-    }
-    if (!filter.includeAll && !micromatch.any(spath, filter.includes)) {
-        return EMathType.nmatch;
-    }
-    return EMathType.match;
+	if (micromatch.any(spath.replace(/\\/g, '/'), filter.excludes)) {
+		return EMathType.exclude;
+	}
+	if (!filter.includeAll && !micromatch.any(spath, filter.includes)) {
+		return EMathType.nmatch;
+	}
+	return EMathType.match;
 }

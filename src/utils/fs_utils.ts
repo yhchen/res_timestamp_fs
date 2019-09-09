@@ -7,17 +7,17 @@ import * as path from 'path';
  * @param dir file or directory
  */
 export function mkdir(dir: string): boolean {
-    // fs.mkdirSync(dir, {recursive:true});
+	// fs.mkdirSync(dir, {recursive:true});
 
-    if (!fs.existsSync(dir)) {
-        const parentDir = path.dirname(dir);
-        if (!fs.existsSync(parentDir)) {
-            mkdir(parentDir);
-        }
-        fs.mkdirSync(dir);
-    }
+	if (!fs.existsSync(dir)) {
+		const parentDir = path.dirname(dir);
+		if (!fs.existsSync(parentDir)) {
+			mkdir(parentDir);
+		}
+		fs.mkdirSync(dir);
+	}
 
-    return fs.existsSync(dir);
+	return fs.existsSync(dir);
 }
 
 const GlobalIgnoreFolderLst = new Set<string>(['.svn', '.git']);
@@ -26,14 +26,14 @@ const GlobalIgnoreFolderLst = new Set<string>(['.svn', '.git']);
  * 
  * @param s add global ignore file or directory in ignore filter
  */
-export function AddGlobalIgnoreFileOrDir(s: string) : void {
-    GlobalIgnoreFolderLst.add(s);
+export function AddGlobalIgnoreFileOrDir(s: string): void {
+	GlobalIgnoreFolderLst.add(s);
 }
 
 export const enum EFFolderBreakType {
-    None,
-    BreakAll,
-    BreakFolder,
+	None,
+	BreakAll,
+	BreakFolder,
 }
 
 /**
@@ -42,71 +42,71 @@ export const enum EFFolderBreakType {
  * @param callback 
  * @param recursive 
  */
-export function foreachFolder(dir: string, callback: (path: string, isDir: boolean)=>EFFolderBreakType|void, recursive: boolean = true): boolean {
-    let plst = fs.readdirSync(dir);
-    for (let p of plst) {
-        let spath = path.join(dir, p);
-        let isDir = fs.statSync(spath).isDirectory();
-        // skip global ignore files(or extension)
-        if (GlobalIgnoreFolderLst.has(path.basename(spath))) {
-            continue;
-        }
-        let ret = callback(spath, isDir);
-        if (ret == EFFolderBreakType.BreakAll) {
-            return false;
-        } else if (ret == EFFolderBreakType.BreakFolder) {
-            continue;
-        }
-        if (isDir && recursive) {
-            if (!foreachFolder(spath, callback)) {
-                return false;
-            }
-        }
-    }
-    return true;
+export function foreachFolder(dir: string, callback: (path: string, isDir: boolean) => EFFolderBreakType | void, recursive: boolean = true): boolean {
+	let plst = fs.readdirSync(dir);
+	for (let p of plst) {
+		let spath = path.join(dir, p);
+		let isDir = fs.statSync(spath).isDirectory();
+		// skip global ignore files(or extension)
+		if (GlobalIgnoreFolderLst.has(path.basename(spath))) {
+			continue;
+		}
+		let ret = callback(spath, isDir);
+		if (ret == EFFolderBreakType.BreakAll) {
+			return false;
+		} else if (ret == EFFolderBreakType.BreakFolder) {
+			continue;
+		}
+		if (isDir && recursive) {
+			if (!foreachFolder(spath, callback)) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 /**
  * get file full extension
  * example : 
- *     /1.pvr.ccz => .pvr.ccz
- *     /path/34kjdfdfjdf.txt.zip => .txt.zip
- *     /my_path/file_no_ext => `[empty string]`
+ *	 /1.pvr.ccz => .pvr.ccz
+ *	 /path/34kjdfdfjdf.txt.zip => .txt.zip
+ *	 /my_path/file_no_ext => `[empty string]`
  * @param filename file path
  * @param includeDot include `.` default is `true`
- */ 
+ */
 export function getFileExtName(filename: string, includeDot: boolean = true): string {
-    let lastIdx = filename.length;
-    for (let i = lastIdx - 1; i >- 1; --i) {
-        const c = filename[i];
-        if (c == '/' || c == '\\') {
-            break;
-        } else if (c == '.') {
-            lastIdx = i + 1;
-        }
-    }
-    if (lastIdx == filename.length) return ''; // not found...
-    return filename.substr(includeDot ? lastIdx - 1 : lastIdx);
+	let lastIdx = filename.length;
+	for (let i = lastIdx - 1; i > - 1; --i) {
+		const c = filename[i];
+		if (c == '/' || c == '\\') {
+			break;
+		} else if (c == '.') {
+			lastIdx = i + 1;
+		}
+	}
+	if (lastIdx == filename.length) return ''; // not found...
+	return filename.substr(includeDot ? lastIdx - 1 : lastIdx);
 }
 
 /**
  * get file name without extension
  * example : 
- *     /1.pvr.ccz => .pvr.ccz
- *     /path/34kjdfdfjdf.txt.zip => 34kjdfdfjdf
- *     /my_path/file_no_ext => file_no_ext
+ *	 /1.pvr.ccz => .pvr.ccz
+ *	 /path/34kjdfdfjdf.txt.zip => 34kjdfdfjdf
+ *	 /my_path/file_no_ext => file_no_ext
  * @param filename file path
- */ 
+ */
 export function getFileWithoutExtName(filename: string): string {
-    const p = path.basename(filename);
-    let lastIdx = p.length;
-    for (let i = lastIdx - 1; i >- 1; --i) {
-        const c = p[i];
-        if (c == '.') {
-            lastIdx = i;
-        }
-    }
-    return p.substr(0, lastIdx);
+	const p = path.basename(filename);
+	let lastIdx = p.length;
+	for (let i = lastIdx - 1; i > - 1; --i) {
+		const c = p[i];
+		if (c == '.') {
+			lastIdx = i;
+		}
+	}
+	return p.substr(0, lastIdx);
 }
 
 /**
@@ -115,21 +115,21 @@ export function getFileWithoutExtName(filename: string): string {
  * @param dest 
  */
 export function copyFile(src: string, dest: string): boolean {
-    if (!fs.existsSync(dest)) {
-        if (path.basename(src) == path.basename(dest)) {
-            mkdir(path.dirname(dest));
-        } else {
-            mkdir(dest);
-        }
-    }
-    try {
-        fs.copyFileSync(src, dest);
-    } catch (err) {
-        console.error('ERROR : copy file [' + src + '] to path [' + dest + '] failure!!!');
-        console.error(JSON.stringify(err));
-        return false;
-    }
-    return true;
+	if (!fs.existsSync(dest)) {
+		if (path.basename(src) == path.basename(dest)) {
+			mkdir(path.dirname(dest));
+		} else {
+			mkdir(dest);
+		}
+	}
+	try {
+		fs.copyFileSync(src, dest);
+	} catch (err) {
+		console.error('ERROR : copy file [' + src + '] to path [' + dest + '] failure!!!');
+		console.error(JSON.stringify(err));
+		return false;
+	}
+	return true;
 }
 
 
@@ -140,20 +140,20 @@ export function copyFile(src: string, dest: string): boolean {
  * @param extFilter 
  */
 export function copyDir(src: string, dest: string, extFilter?: Set<string>): boolean {
-    if (extFilter && (extFilter.has('*') || extFilter.has('.*'))) {
-        extFilter = undefined;
-    }
-    foreachFolder(src, (srcpath: string, isDir: boolean) => {
-        const destpath = path.join(dest, path.relative(src, srcpath));
-        if (isDir) {
-            mkdir(destpath);
-        } else {
-            if (!extFilter || extFilter.has(getFileExtName(srcpath))) {
-                copyFile(srcpath, destpath);
-            }
-        }
-    });
-    return true;
+	if (extFilter && (extFilter.has('*') || extFilter.has('.*'))) {
+		extFilter = undefined;
+	}
+	foreachFolder(src, (srcpath: string, isDir: boolean) => {
+		const destpath = path.join(dest, path.relative(src, srcpath));
+		if (isDir) {
+			mkdir(destpath);
+		} else {
+			if (!extFilter || extFilter.has(getFileExtName(srcpath))) {
+				copyFile(srcpath, destpath);
+			}
+		}
+	});
+	return true;
 }
 
 /**
@@ -163,14 +163,14 @@ export function copyDir(src: string, dest: string, extFilter?: Set<string>): boo
  * @param extFilter 
  */
 export function copy(src: string, dest: string, extFilter?: Set<string>): boolean {
-    if (!fs.existsSync(src)) return false;
-    const fstate = fs.statSync(src);
-    if (!fstate) return false;
-    if (fstate.isFile()) {
-        return copyFile(src, dest);
-    } else {
-        return copyDir(src, dest, extFilter);
-    }
+	if (!fs.existsSync(src)) return false;
+	const fstate = fs.statSync(src);
+	if (!fstate) return false;
+	if (fstate.isFile()) {
+		return copyFile(src, dest);
+	} else {
+		return copyDir(src, dest, extFilter);
+	}
 }
 
 /**
@@ -178,55 +178,55 @@ export function copy(src: string, dest: string, extFilter?: Set<string>): boolea
  * @param dir 
  */
 export function rm(dir: string): boolean {
-    if(fs.existsSync(dir)) {
-        if (fs.statSync(dir).isFile()) {
-            fs.unlinkSync(dir);
-        } else {
-            const files = fs.readdirSync(dir);
-            files.forEach(function(file){
-                let curPath = path.join(dir, file);
-                if(fs.statSync(curPath).isDirectory()) { // recurse
-                    rm(curPath);
-                } else { // delete file
-                    fs.unlinkSync(curPath);
-                }
-            });
-            fs.rmdirSync(dir);
-        }
-    }
-    return !fs.existsSync(dir);
+	if (fs.existsSync(dir)) {
+		if (fs.statSync(dir).isFile()) {
+			fs.unlinkSync(dir);
+		} else {
+			const files = fs.readdirSync(dir);
+			files.forEach(function (file) {
+				let curPath = path.join(dir, file);
+				if (fs.statSync(curPath).isDirectory()) { // recurse
+					rm(curPath);
+				} else { // delete file
+					fs.unlinkSync(curPath);
+				}
+			});
+			fs.rmdirSync(dir);
+		}
+	}
+	return !fs.existsSync(dir);
 }
 
 export async function makeTempFile(name?: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const tempPath = path.join(os.tmpdir(), 'tmp-fs-utils-dir');
-        fs.mkdtemp(tempPath, (err, folder) => {
-            if (err) {
-                return reject(err)
-            }
-            const file_name = path.join(folder, name||Date.now().toString());
-            console.log(`create temporary file : ${file_name}`);
-            resolve(file_name);
-        });
-    });
+	return new Promise((resolve, reject) => {
+		const tempPath = path.join(os.tmpdir(), 'tmp-fs-utils-dir');
+		fs.mkdtemp(tempPath, (err, folder) => {
+			if (err) {
+				return reject(err)
+			}
+			const file_name = path.join(folder, name || Date.now().toString());
+			console.log(`create temporary file : ${file_name}`);
+			resolve(file_name);
+		});
+	});
 }
 
 const delayRemoveList = new Array<string>();
-process.on('beforeExit', ()=>{
-    for (const p of delayRemoveList) {
-        if (fs.existsSync(p)) {
-            rm(p);
-        }
-    }
+process.on('beforeExit', () => {
+	for (const p of delayRemoveList) {
+		if (fs.existsSync(p)) {
+			rm(p);
+		}
+	}
 });
 
 export function makeTempDirectory(perfix?: string): string {
-    const tempPathPrefix = path.join(os.tmpdir(), perfix||'tmp-fs-utils-dir');
-    const tempPath = fs.mkdtempSync(tempPathPrefix, {encoding:null});
-    console.log(`create temporary directory : ${tempPath}`);
-    if (!mkdir(tempPath)) {
-        console.log(`mkdir ${tempPath} failure!`);
-    }
-    delayRemoveList.push(tempPath);
-    return tempPath;
+	const tempPathPrefix = path.join(os.tmpdir(), perfix || 'tmp-fs-utils-dir');
+	const tempPath = fs.mkdtempSync(tempPathPrefix, { encoding: null });
+	console.log(`create temporary directory : ${tempPath}`);
+	if (!mkdir(tempPath)) {
+		console.log(`mkdir ${tempPath} failure!`);
+	}
+	delayRemoveList.push(tempPath);
+	return tempPath;
 }
