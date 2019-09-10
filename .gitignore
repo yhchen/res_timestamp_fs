@@ -8,3 +8,5 @@
 /library/cpp/rf_runtime/.vs
 /library/cpp/rf_runtime/x64
 /library/cpp/rf_runtime/Release
+/runtime/cpp/rf_runtime/x64
+/runtime/cpp/rf_runtime/.vs
